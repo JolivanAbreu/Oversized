@@ -1,0 +1,416 @@
+openapi: 3.0.3
+info:
+  title: Blusã Oversized Store — API
+  description: API REST do sistema de vendas online da Blusã Oversized Store. Pagamentos via Mercado Pago (cartão de crédito e Pix).
+  version: "1.0.0"
+servers:
+  - url: https://api.blusaoversized.com.br/v1
+    description: Produção
+  - url: https://staging-api.blusaoversized.com.br/v1
+    description: Homologação
+tags:
+  - name: Auth
+  - name: Produtos
+  - name: Carrinho
+  - name: Pedidos
+  - name: Pagamentos
+  - name: Cupons
+  - name: Endereços
+  - name: Avaliações
+  - name: Admin
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cadastrar novo cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterInput' }
+      responses:
+        '201': { description: Cliente criado, e-mail de confirmação enviado }
+        '409': { description: E-mail já cadastrado }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Autenticar cliente ou operador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '401': { description: Credenciais inválidas }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar access token a partir do refresh token
+      responses:
+        '200': { description: Novo access token emitido }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Solicitar redefinição de senha
+      responses:
+        '200': { description: E-mail de redefinição enviado, se o e-mail existir }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Redefinir senha a partir do token recebido por e-mail
+      responses:
+        '200': { description: Senha redefinida }
+        '400': { description: Token inválido ou expirado }
+
+  /products:
+    get:
+      tags: [Produtos]
+      summary: Listar produtos com filtros e paginação
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: size, in: query, schema: { type: string } }
+        - { name: color, in: query, schema: { type: string } }
+        - { name: min_price, in: query, schema: { type: number } }
+        - { name: max_price, in: query, schema: { type: number } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, price_asc, price_desc, best_selling] } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+      responses:
+        '200':
+          description: Lista paginada de produtos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductListPage' }
+
+  /products/{slug}:
+    get:
+      tags: [Produtos]
+      summary: Obter detalhe do produto, com variações e imagens
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Produto encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '404': { description: Produto não encontrado }
+
+  /categories:
+    get:
+      tags: [Produtos]
+      summary: Listar categorias
+      responses:
+        '200': { description: Lista de categorias }
+
+  /cart:
+    get:
+      tags: [Carrinho]
+      summary: Obter carrinho atual
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Carrinho do usuário }
+
+  /cart/items:
+    post:
+      tags: [Carrinho]
+      summary: Adicionar item ao carrinho
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CartItemInput' }
+      responses:
+        '201': { description: Item adicionado }
+        '409': { description: Estoque insuficiente }
+
+  /cart/items/{id}:
+    put:
+      tags: [Carrinho]
+      summary: Atualizar quantidade de um item do carrinho
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Item atualizado }
+    delete:
+      tags: [Carrinho]
+      summary: Remover item do carrinho
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '204': { description: Item removido }
+
+  /cart/shipping-quote:
+    post:
+      tags: [Carrinho]
+      summary: Calcular opções de frete para o CEP informado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Opções de frete disponíveis }
+
+  /coupons/validate:
+    post:
+      tags: [Cupons]
+      summary: Validar cupom para o carrinho atual
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Cupom válido, desconto calculado }
+        '422': { description: Cupom inválido, expirado ou abaixo do valor mínimo }
+
+  /orders:
+    post:
+      tags: [Pedidos]
+      summary: Criar pedido a partir do carrinho (reserva de estoque)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderInput' }
+      responses:
+        '201':
+          description: Pedido criado em "aguardando_pagamento"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '409': { description: Estoque insuficiente para um ou mais itens }
+    get:
+      tags: [Pedidos]
+      summary: Listar pedidos do cliente autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de pedidos }
+
+  /orders/{id}:
+    get:
+      tags: [Pedidos]
+      summary: Obter detalhe de um pedido
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Pedido encontrado }
+        '404': { description: Pedido não encontrado }
+
+  /payments/card:
+    post:
+      tags: [Pagamentos]
+      summary: Processar pagamento por cartão de crédito (token gerado no cliente)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CardPaymentInput' }
+      responses:
+        '201': { description: Pagamento criado (pendente de confirmação assíncrona)' }
+        '402': { description: Pagamento recusado pela adquirente }
+
+  /payments/pix:
+    post:
+      tags: [Pagamentos]
+      summary: Gerar cobrança Pix (QR Code) para um pedido
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: QR Code e código copia-e-cola gerados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PixPaymentResponse' }
+
+  /payments/{id}/status:
+    get:
+      tags: [Pagamentos]
+      summary: Consultar status atual de um pagamento
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Status do pagamento }
+
+  /webhooks/mercadopago:
+    post:
+      tags: [Pagamentos]
+      summary: Endpoint de notificação assíncrona do Mercado Pago
+      responses:
+        '200': { description: Notificação processada }
+        '401': { description: Assinatura inválida }
+
+  /addresses:
+    get:
+      tags: [Endereços]
+      summary: Listar endereços do cliente
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Lista de endereços } }
+    post:
+      tags: [Endereços]
+      summary: Cadastrar novo endereço
+      security: [{ bearerAuth: [] }]
+      responses: { '201': { description: Endereço criado } }
+
+  /addresses/{id}:
+    put:
+      tags: [Endereços]
+      summary: Atualizar endereço
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Endereço atualizado } }
+    delete:
+      tags: [Endereços]
+      summary: Remover endereço
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '204': { description: Endereço removido } }
+
+  /products/{id}/reviews:
+    get:
+      tags: [Avaliações]
+      summary: Listar avaliações de um produto
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Lista de avaliações } }
+    post:
+      tags: [Avaliações]
+      summary: Criar avaliação (requer compra entregue do produto)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '201': { description: Avaliação registrada }
+        '403': { description: Cliente não comprou/recebeu o produto }
+
+  /admin/products:
+    post:
+      tags: [Admin]
+      summary: Criar produto (admin)
+      security: [{ bearerAuth: [] }]
+      responses: { '201': { description: Produto criado } }
+
+  /admin/orders:
+    get:
+      tags: [Admin]
+      summary: Listar todos os pedidos (admin/operador)
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Lista de pedidos } }
+
+  /admin/orders/{id}/status:
+    put:
+      tags: [Admin]
+      summary: Atualizar status de um pedido (separação, envio, entrega, cancelamento)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Status atualizado }
+        '422': { description: Transição de status inválida }
+
+  /admin/coupons:
+    post:
+      tags: [Admin]
+      summary: Criar cupom de desconto
+      security: [{ bearerAuth: [] }]
+      responses: { '201': { description: Cupom criado } }
+
+  /admin/dashboard/metrics:
+    get:
+      tags: [Admin]
+      summary: Métricas do painel (vendas por período, ticket médio, mais vendidos)
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Métricas agregadas } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterInput:
+      type: object
+      required: [name, email, password, cpf]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        cpf: { type: string }
+        phone: { type: string }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AuthTokens:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer }
+    ProductListPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Product' } }
+        page: { type: integer }
+        total_pages: { type: integer }
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        base_price: { type: number }
+        variants:
+          type: array
+          items: { $ref: '#/components/schemas/Variant' }
+    Variant:
+      type: object
+      properties:
+        id: { type: string }
+        size: { type: string, enum: [P, M, G, GG, XG] }
+        color: { type: string }
+        sku: { type: string }
+        stock_quantity: { type: integer }
+        price_override: { type: number, nullable: true }
+    CartItemInput:
+      type: object
+      required: [variant_id, quantity]
+      properties:
+        variant_id: { type: string }
+        quantity: { type: integer, minimum: 1 }
+    CreateOrderInput:
+      type: object
+      required: [address_id, shipping_option_id]
+      properties:
+        address_id: { type: string }
+        shipping_option_id: { type: string }
+        coupon_code: { type: string, nullable: true }
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        order_number: { type: string }
+        status: { type: string, enum: [aguardando_pagamento, pago, em_separacao, enviado, entregue, cancelado, reembolsado] }
+        subtotal: { type: number }
+        discount: { type: number }
+        shipping_cost: { type: number }
+        total: { type: number }
+    CardPaymentInput:
+      type: object
+      required: [order_id, card_token, installments]
+      properties:
+        order_id: { type: string }
+        card_token: { type: string, description: Token gerado pelo SDK do Mercado Pago no navegador }
+        installments: { type: integer }
+    PixPaymentResponse:
+      type: object
+      properties:
+        payment_id: { type: string }
+        qr_code_base64: { type: string }
+        copy_paste_code: { type: string }
+        expires_at: { type: string, format: date-time }

@@ -1,0 +1,198 @@
+const { Order, OrderItem, Address, ProductVariant, Product, User, sequelize } = require('../models');
+const ApiError = require('../utils/apiError');
+const cartService = require('./cart.service');
+const couponService = require('./coupon.service');
+const stockService = require('./stock.service');
+const shippingIntegration = require('../integrations/shipping');
+const emailService = require('./email.service');
+const { nextOrderNumber } = require('../utils/generateOrderNumber');
+
+/**
+ * Cria um pedido a partir do carrinho atual (RF-18): dentro de uma única
+ * transação, valida e reserva o estoque de cada item, calcula os totais e
+ * grava o pedido em "aguardando_pagamento". Se qualquer item não tiver
+ * estoque suficiente, a transação inteira é revertida (RF-15).
+ */
+async function createOrder(userId, { addressId, shippingOptionId, couponCode }) {
+  const address = await Address.findOne({ where: { id: addressId, userId } });
+  if (!address) throw ApiError.notFound('Endereço não encontrado para este cliente');
+
+  const cart = await cartService.getCartWithItems(userId);
+  if (cart.items.length === 0) throw ApiError.badRequest('Carrinho vazio');
+
+  const shippingOptions = await shippingIntegration.quoteShipping({ zip: address.zip, items: cart.items });
+  const shippingOption = shippingOptions.find((o) => o.id === shippingOptionId);
+  if (!shippingOption) throw ApiError.badRequest('Opção de frete inválida', 'invalid_shipping_option');
+
+  let coupon = null;
+  let discount = 0;
+  if (couponCode) {
+    coupon = await couponService.validateCoupon(couponCode, cart.subtotal);
+    discount = couponService.calculateDiscount(coupon, cart.subtotal);
+  }
+
+  const total = cart.subtotal - discount + shippingOption.price;
+
+  return sequelize.transaction(async (transaction) => {
+    // Reserva o estoque item a item — RETURNING/condição atômica no UPDATE
+    // garante que dois checkouts simultâneos não vendam além do saldo (RN-02).
+    for (const item of cart.items) {
+      await stockService.reserveStock(item.variant.id, item.quantity, { transaction });
+    }
+
+    const orderNumber = await nextOrderNumber(sequelize);
+
+    const order = await Order.create({
+      userId,
+      addressId,
+      orderNumber,
+      status: 'aguardando_pagamento',
+      subtotal: cart.subtotal,
+      discount,
+      shippingCost: shippingOption.price,
+      total,
+      couponCode: coupon ? coupon.code : null,
+    }, { transaction });
+
+    await OrderItem.bulkCreate(
+      cart.items.map((item) => ({
+        orderId: order.id,
+        variantId: item.variant.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice, // preço congelado no momento da compra (documento 3, seção 4)
+      })),
+      { transaction }
+    );
+
+    if (coupon) {
+      await couponService.registerUsage(coupon.code, { transaction });
+    }
+
+    await cartService.clearCart(userId, { transaction });
+
+    return order;
+  });
+}
+
+async function listOrdersForUser(userId) {
+  return Order.findAll({
+    where: { userId },
+    include: [{ model: OrderItem, as: 'items', include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] }] }],
+    order: [['createdAt', 'DESC']],
+  });
+}
+
+async function getOrderById(userId, orderId) {
+  const where = { id: orderId };
+  if (userId) where.userId = userId; // admin/operador consulta sem filtrar por usuário
+
+  const order = await Order.findOne({
+    where,
+    include: [
+      { model: OrderItem, as: 'items', include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] }] },
+      { model: Address, as: 'address' },
+    ],
+  });
+  if (!order) throw ApiError.notFound('Pedido não encontrado');
+  return order;
+}
+
+/**
+ * Libera o estoque reservado de um pedido — usado no cancelamento e na
+ * expiração automática de pedidos Pix não pagos (RF-19, RN-03).
+ */
+async function releaseOrderStock(order, { transaction } = {}) {
+  const items = order.items || (await OrderItem.findAll({ where: { orderId: order.id }, transaction }));
+  for (const item of items) {
+    await stockService.releaseStock(item.variantId, item.quantity, { transaction });
+  }
+}
+
+function assertValidTransition(currentStatus, nextStatus) {
+  const allowed = Order.VALID_TRANSITIONS[currentStatus] || [];
+  if (!allowed.includes(nextStatus)) {
+    throw ApiError.unprocessable(
+      `Transição de status inválida: ${currentStatus} -> ${nextStatus}`,
+      'invalid_status_transition'
+    );
+  }
+}
+
+/**
+ * Atualiza o status do pedido validando a máquina de estados (RF-26/RF-27),
+ * disparando e-mail ao cliente (RF-28) e liberando estoque em cancelamentos.
+ */
+async function updateOrderStatus(orderId, nextStatus, { trackingCode } = {}) {
+  return sequelize.transaction(async (transaction) => {
+    const order = await Order.findByPk(orderId, {
+      include: [{ model: OrderItem, as: 'items' }],
+      transaction,
+    });
+    if (!order) throw ApiError.notFound('Pedido não encontrado');
+
+    assertValidTransition(order.status, nextStatus);
+
+    if (nextStatus === 'enviado' && !trackingCode) {
+      throw ApiError.badRequest('Código de rastreio é obrigatório para marcar como enviado');
+    }
+    // Estoque é reservado já na criação do pedido (aguardando_pagamento), então
+    // todo cancelamento libera o estoque — independentemente do status anterior.
+    const wasPaid = ['pago', 'em_separacao'].includes(order.status);
+    if (nextStatus === 'cancelado') {
+      await releaseOrderStock(order, { transaction });
+    }
+
+    order.status = nextStatus;
+    if (nextStatus === 'enviado') {
+      order.trackingCode = trackingCode;
+      order.shippedAt = new Date();
+    }
+    if (nextStatus === 'entregue') order.deliveredAt = new Date();
+    await order.save({ transaction });
+
+    const user = await User.findByPk(order.userId, { transaction });
+    // Fire-and-forget: notificação por e-mail nunca deve atrasar a resposta
+    // HTTP da atualização de status (o await + catch anterior chegava a
+    // segurar a request por segundos quando o SMTP estava fora do ar).
+    emailService.sendOrderStatusUpdate(user, order).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('[email] falha ao notificar mudança de status do pedido', err.message);
+    });
+
+    // Cancelamento de pedido já pago aciona estorno automático (RN-06). Requerido
+    // dentro da função para evitar dependência circular entre os services.
+    if (nextStatus === 'cancelado' && wasPaid) {
+      const paymentService = require('./payment.service');
+      await paymentService.refundOrderPayment(order.id).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[pagamento] falha ao acionar estorno automático', err.message);
+      });
+    }
+
+    return order;
+  });
+}
+
+async function listAllOrders({ status, page = 1 } = {}) {
+  const where = {};
+  if (status) where.status = status;
+  const PAGE_SIZE = 30;
+
+  const { rows, count } = await Order.findAndCountAll({
+    where,
+    order: [['createdAt', 'DESC']],
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
+  return { data: rows, page: Number(page), totalPages: Math.ceil(count / PAGE_SIZE), total: count };
+}
+
+module.exports = {
+  createOrder,
+  listOrdersForUser,
+  getOrderById,
+  updateOrderStatus,
+  releaseOrderStock,
+  listAllOrders,
+  assertValidTransition,
+};

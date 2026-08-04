@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Paleta: papel/bone frio (não creme), tinta quase-preta, laranja de etiqueta
+     de segurança (bem mais saturado/vermelho que o terracota D97757) e lima
+     de adesivo — evitando os três "olhares padrão" de design gerado por IA. */
+  --color-canvas: #EDEBE2;
+  --color-canvas-alt: #E3E0D3;
+  --color-ink: #17161C;
+  --color-ink-soft: #3A3945;
+  --color-tag: #FF4B1F;
+  --color-tag-dark: #D93C15;
+  --color-lime: #D6FF3F;
+  --color-line: #C9C4B3;
+  --color-white: #FFFFFF;
+  --color-danger: #C0392B;
+
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-tag);
+  color: var(--color-white);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* Elemento de assinatura: etiqueta de roupa. Um pequeno retângulo com "furo"
+   de barbante no canto e leve rotação, usado para preço, tamanho e badges
+   de status em toda a loja — referência direta ao objeto físico da etiqueta
+   de roupa (tamanho/preço) que a marca vende. */
+.tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--color-white);
+  border: 1.5px solid var(--color-ink);
+  padding: 0.3rem 0.7rem 0.3rem 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  transform: rotate(-2deg);
+  box-shadow: 2px 2px 0 var(--color-ink);
+}
+
+.tag::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-canvas);
+}
+
+.tag--tilt-right {
+  transform: rotate(2deg);
+}
+
+.tag--tag {
+  background: var(--color-tag);
+  color: var(--color-white);
+  border-color: var(--color-ink);
+}
+
+.tag--lime {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+
+.hairline {
+  border-color: var(--color-line);
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
