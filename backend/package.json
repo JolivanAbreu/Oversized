@@ -1,7 +1,7 @@
 {
-  "name": "blusa-oversized-store-api",
+  "name": "dravennx-api",
   "version": "1.0.0",
-  "description": "API REST do sistema de vendas online da Blusã Oversized Store",
+  "description": "API REST do sistema de vendas online da Dravennx",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mercadopago": "^2.0.15",
     "morgan": "^1.10.0",
+    "multer": "^2.2.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.14",
     "pg": "^8.12.0",

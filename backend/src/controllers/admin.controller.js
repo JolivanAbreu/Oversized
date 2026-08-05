@@ -84,6 +84,19 @@ const setCouponActive = asyncHandler(async (req, res) => {
 
 // --- Dashboard ---
 
+// --- Upload de imagens ---
+
+const uploadImage = asyncHandler(async (req, res) => {
+  if (!req.file) throw ApiError.badRequest('Nenhum arquivo enviado', 'no_file');
+
+  // Monta a URL pública a partir da própria requisição — funciona tanto em
+  // desenvolvimento (localhost) quanto em produção, sem depender de
+  // API_PUBLIC_URL estar configurada corretamente.
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const url = `${baseUrl}/uploads/${req.file.filename}`;
+  res.status(201).json({ url });
+});
+
 const dashboardMetrics = asyncHandler(async (req, res) => {
   const [salesByDay] = await sequelize.query(`
     SELECT DATE(created_at) AS day, COUNT(*) AS orders, SUM(total) AS revenue
@@ -124,6 +137,7 @@ const dashboardMetrics = asyncHandler(async (req, res) => {
 
 module.exports = {
   listProducts, getProduct, createProduct, updateProduct, deactivateProduct, reactivateProduct, adjustStock,
+  uploadImage,
   listOrders, getOrder, updateOrderStatus,
   createCoupon, listCoupons, setCouponActive,
   dashboardMetrics,

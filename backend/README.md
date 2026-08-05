@@ -1,4 +1,4 @@
-# Blusã Oversized Store — API
+# Dravennx — API
 
 Backend do sistema de vendas online, em Node.js/Express + Sequelize (PostgreSQL).
 Pagamentos exclusivamente via Mercado Pago (cartão de crédito e Pix).
@@ -101,13 +101,51 @@ src/
 
 ## Conta do usuário e ciclo de vida do pedido
 
-- `GET/PUT /account` e `PUT /account/password` — perfil e troca de senha
-  (exige senha atual).
+- `GET/PUT /account`, `PUT /account/email` (exige senha atual) e
+  `PUT /account/password` — perfil, troca de e-mail e troca de senha.
 - `POST /orders/:id/cancel` — cliente cancela o próprio pedido enquanto ainda
   não foi enviado; se já estava pago, aciona estorno automático.
 - `DELETE /orders/:id` — remove definitivamente um pedido, mas só quando ele
   nunca chegou a ser pago (ou já está cancelado) — preserva o histórico
   fiscal de qualquer pedido pago.
+
+## Envio de e-mail (confirmação de cadastro, redefinição de senha)
+
+O envio usa SMTP genérico via Nodemailer (`src/integrations/mailer.js`).
+Sem SMTP configurado, o app **não quebra** — o e-mail falha silenciosamente
+em segundo plano (fire-and-forget) e o fluxo continua normalmente.
+
+Opção gratuita recomendada para colocar no ar rapidamente: **Gmail com senha
+de app** (grátis, ~500 e-mails/dia, suficiente para uma loja pequena):
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=sualoja@gmail.com
+SMTP_PASS=<senha de app gerada em myaccount.google.com/apppasswords>
+```
+
+Se o e-mail não for confiável no seu caso, o cliente ainda tem uma saída:
+qualquer pessoa da equipe pode redefinir a senha de um cliente diretamente
+pelo banco (ou, futuramente, por uma tela de gestão de usuários no painel —
+ver "Próximos passos").
+
+## Upload de imagens de produto
+
+`POST /admin/uploads` (admin) aceita um arquivo (`multipart/form-data`,
+campo `image`, até 5MB, JPG/PNG/WEBP/GIF) e salva em `backend/uploads/`,
+servido estaticamente em `/uploads/<arquivo>`. A URL retornada é montada a
+partir da própria requisição (`req.protocol` + `req.get('host')`), então
+funciona tanto em `localhost` quanto em produção sem configuração extra.
+Colar uma URL já hospedada continua funcionando normalmente — upload e URL
+convivem no mesmo campo `images` do produto.
+
+## Opções de entrega
+
+Substituídas por **Uberflex**, **99Flex** (motoboy sob demanda, preços fixos
+configuráveis via `SHIPPING_UBERFLEX_PRICE`/`SHIPPING_99FLEX_PRICE` no
+`.env`) e **"Combinar com o vendedor"** (frete zero no checkout, pedido fica
+marcado para contato manual da equipe).
 
 ## Próximos passos sugeridos
 
@@ -115,8 +153,8 @@ src/
    mocks; falta validar com credenciais de sandbox verdadeiras — cartões de
    teste oficiais e o webhook de fato batendo na aplicação, o que exige uma
    URL pública, ex.: via ngrok, ou o deploy em produção).
-2. Upload de imagens de produto (hoje o payload de criação de produto espera
-   URLs já hospedadas — falta o endpoint de upload para Cloudinary/S3).
+2. Tela de gestão de usuários no painel (promover cliente a operador/admin,
+   redefinir senha de cliente sem depender de e-mail).
 3. Job de e-mail assíncrono (fila) para desacoplar completamente o envio de
    e-mail do ciclo de vida da requisição HTTP (hoje já é fire-and-forget, mas
    uma fila com retry seria mais robusta que best-effort simples).

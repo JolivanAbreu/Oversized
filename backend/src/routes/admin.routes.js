@@ -2,6 +2,7 @@ const router = require('express').Router();
 const controller = require('../controllers/admin.controller');
 const { authenticate } = require('../middlewares/auth');
 const { requireRole } = require('../middlewares/rbac');
+const { upload } = require('../middlewares/upload');
 
 // Aplica autenticação + verificação de perfil em cada rota individualmente
 // (nunca via router.use sem prefixo — ver nota em routes/index.js).
@@ -15,6 +16,10 @@ router.put('/admin/products/:id', authenticate, requireRole('admin'), controller
 router.delete('/admin/products/:id', authenticate, requireRole('admin'), controller.deactivateProduct);
 router.put('/admin/products/:id/reactivate', authenticate, requireRole('admin'), controller.reactivateProduct);
 router.put('/admin/variants/:variantId/stock', authenticate, requireRole('admin', 'operator'), controller.adjustStock);
+
+// Upload de imagem de produto — aceita arquivo do computador (multipart),
+// mantendo a opção de colar uma URL já hospedada (campo separado no form)
+router.post('/admin/uploads', authenticate, requireRole('admin'), upload.single('image'), controller.uploadImage);
 
 // Pedidos — administrador e operador
 router.get('/admin/orders', authenticate, requireRole('admin', 'operator'), controller.listOrders);

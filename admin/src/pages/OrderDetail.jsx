@@ -62,15 +62,33 @@ export default function OrderDetail() {
         <StatusPill label={ORDER_STATUS_LABELS[order.status]} tone={ORDER_STATUS_TONE[order.status]} />
       </div>
 
+      {order.user && (
+        <section className="mt-6 rounded-lg border border-line bg-white p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Cliente</h2>
+          <div className="mt-2 grid gap-1 text-sm sm:grid-cols-3">
+            <p><span className="text-ink-soft">Nome:</span> {order.user.name}</p>
+            <p><span className="text-ink-soft">E-mail:</span> {order.user.email}</p>
+            <p><span className="text-ink-soft">Telefone:</span> {order.user.phone || '—'}</p>
+          </div>
+        </section>
+      )}
+
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <section className="rounded-lg border border-line bg-white p-5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Itens</h2>
           <div className="mt-3 space-y-3">
             {order.items?.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <div>
-                  <p className="font-medium">{item.variant?.product?.name}</p>
-                  <p className="text-xs text-ink-soft">{item.variant?.size} · {item.variant?.color} · qtd {item.quantity}</p>
+              <div key={item.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-3">
+                  {item.variant?.product?.images?.[0]?.url ? (
+                    <img src={item.variant.product.images[0].url} alt="" className="h-10 w-10 rounded object-cover" />
+                  ) : (
+                    <div className="h-10 w-10 rounded bg-canvas" />
+                  )}
+                  <div>
+                    <p className="font-medium">{item.variant?.product?.name}</p>
+                    <p className="text-xs text-ink-soft">{item.variant?.size} · {item.variant?.color} · qtd {item.quantity}</p>
+                  </div>
                 </div>
                 <p className="font-mono">{formatPrice(item.unitPrice * item.quantity)}</p>
               </div>

@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-ink px-5">
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
-        <p className="font-display text-2xl">BLUSÃO</p>
+        <p className="font-display text-2xl">DRAVENNX</p>
         <p className="text-xs uppercase tracking-widest text-ink-soft">Painel administrativo</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">

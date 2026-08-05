@@ -92,6 +92,7 @@ async function listProductsForAdmin({ search, page = 1 } = {}) {
     include: [
       { model: ProductVariant, as: 'variants' },
       { model: Category, as: 'category' },
+      { model: ProductImage, as: 'images', separate: true, limit: 1, order: [['order', 'ASC']] },
     ],
     distinct: true,
     order: [['createdAt', 'DESC']],

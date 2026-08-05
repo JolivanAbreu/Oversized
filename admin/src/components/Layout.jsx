@@ -13,7 +13,7 @@ export default function Layout() {
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col bg-ink px-4 py-6">
         <div className="px-2">
-          <p className="font-display text-xl text-white">BLUSÃO</p>
+          <p className="font-display text-xl text-white">DRAVENNX</p>
           <p className="text-[11px] uppercase tracking-widest text-white/40">Painel administrativo</p>
         </div>
 

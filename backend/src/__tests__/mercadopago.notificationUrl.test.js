@@ -35,13 +35,13 @@ describe('notification_url do Mercado Pago', () => {
   });
 
   it('inclui notification_url válida quando API_PUBLIC_URL é uma URL pública real', async () => {
-    process.env.API_PUBLIC_URL = 'https://api.blusaoversized.com.br';
+    process.env.API_PUBLIC_URL = 'https://api.dravennx.com.br';
     const mercadopago = require('../integrations/mercadopago');
 
     await mercadopago.createPixPayment({ transactionAmount: 10, description: 'x', payer: {}, externalReference: 'o1' });
 
     const body = mockCreate.mock.calls[0][0].body;
-    expect(body.notification_url).toBe('https://api.blusaoversized.com.br/v1/webhooks/mercadopago');
+    expect(body.notification_url).toBe('https://api.dravennx.com.br/v1/webhooks/mercadopago');
   });
 
   it('nunca lança erro mesmo com API_PUBLIC_URL malformada — apenas omite o campo', async () => {

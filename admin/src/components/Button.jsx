@@ -8,7 +8,7 @@ export default function Button({ as: Component = 'button', variant = 'primary', 
   const variants = {
     primary: 'bg-ink text-white hover:bg-tag',
     secondary: 'bg-white text-ink border border-line hover:border-ink',
-    danger: 'bg-danger text-white hover:bg-danger/90',
+    danger: 'bg-danger-bg text-white hover:opacity-90',
     ghost: 'bg-transparent text-ink-soft hover:text-ink',
   };
 

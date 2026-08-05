@@ -15,7 +15,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 bg-ink text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 py-4 sm:px-8">
         <Link to="/" className="font-display text-2xl tracking-tight sm:text-3xl">
-          BLUS<span className="text-tag">Ã</span>O
+          DRAVENNX
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

@@ -2,25 +2,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* Mesma família de marca da loja (ink/tag/lime), reexpressa para um painel
-     operacional: aqui a prioridade é densidade e leitura rápida de status,
-     não a tipografia gigante da vitrine. Acrescenta --color-warn (âmbar)
-     para o terceiro estado que um painel de operação sempre precisa e a loja
-     não tinha: "atenção/pendente". */
-  --color-canvas: #F7F6F2;
+  /* Paleta oficial da marca Dravennx — escala de cinza neutra (Coolors:
+     F8F9FA → 212529), reexpressa para o painel operacional: os três estados
+     de status (positivo/atenção/negativo) são diferenciados por CONTRASTE DE
+     TOM (claro → médio → escuro), não por matiz, já que a paleta é 100% cinza. */
+  --color-canvas: #F8F9FA;
   --color-surface: #FFFFFF;
-  --color-ink: #17161C;
-  --color-ink-soft: #5B5A66;
-  --color-tag: #FF4B1F;
-  --color-tag-dark: #D93C15;
-  --color-lime: #2E7D32;
-  --color-lime-bg: #E4F3E5;
-  --color-warn: #B7791F;
-  --color-warn-bg: #FBF0DA;
-  --color-line: #E2E0D8;
+  --color-ink: #212529;
+  --color-ink-soft: #6C757D;
+  --color-tag: #000000;
+  --color-tag-dark: #000000;
+  --color-lime: #212529;
+  --color-lime-bg: #E9ECEF;
+  --color-warn: #212529;
+  --color-warn-bg: #CED4DA;
+  --color-line: #CED4DA;
   --color-white: #FFFFFF;
-  --color-danger: #C0392B;
-  --color-danger-bg: #FBE7E4;
+  --color-danger: #F8F9FA;
+  --color-danger-bg: #495057;
 
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
   --font-mono: 'Space Mono', ui-monospace, monospace;

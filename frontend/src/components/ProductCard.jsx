@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Tag from './Tag';
-import GarmentArt from './GarmentArt';
+import ProductMedia from './ProductMedia';
 import { formatPrice } from '../lib/format';
 
 export default function ProductCard({ product }) {
@@ -11,7 +11,7 @@ export default function ProductCard({ product }) {
   return (
     <Link to={`/produtos/${product.slug}`} className="group block">
       <div className="relative overflow-hidden border-2 border-ink bg-canvas-alt">
-        <GarmentArt color={firstVariant?.color} className="h-72 w-full transition-transform duration-300 group-hover:scale-105" />
+        <ProductMedia product={product} color={firstVariant?.color} className="h-72 w-full transition-transform duration-300 group-hover:scale-105" />
         <div className="absolute left-3 top-3">
           <Tag variant="tag">{formatPrice(product.basePrice)}</Tag>
         </div>

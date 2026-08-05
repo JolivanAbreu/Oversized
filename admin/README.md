@@ -1,4 +1,4 @@
-# Blusã Oversized Store — Painel Administrativo
+# Dravennx — Painel Administrativo
 
 Frontend interno (React 19 + Vite + Tailwind CSS v4) para a equipe da loja
 gerenciar produtos, estoque, pedidos e cupons. Projeto separado da loja

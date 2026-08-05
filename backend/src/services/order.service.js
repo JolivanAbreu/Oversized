@@ -1,4 +1,4 @@
-const { Order, OrderItem, Address, ProductVariant, Product, User, Payment, sequelize } = require('../models');
+const { Order, OrderItem, Address, ProductVariant, Product, ProductImage, User, Payment, sequelize } = require('../models');
 const ApiError = require('../utils/apiError');
 const cartService = require('./cart.service');
 const couponService = require('./coupon.service');
@@ -89,9 +89,12 @@ async function getOrderById(userId, orderId) {
   const order = await Order.findOne({
     where,
     include: [
-      { model: OrderItem, as: 'items', include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] }] },
+      { model: OrderItem, as: 'items', include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images', separate: true, limit: 1, order: [['order', 'ASC']] }] }] }] },
       { model: Address, as: 'address' },
       { model: Payment, as: 'payments', separate: true, order: [['createdAt', 'DESC']] },
+      // Dados do cliente só fazem sentido quando é uma consulta administrativa
+      // (userId nulo) — no autoatendimento do cliente, ele já sabe quem é.
+      ...(userId ? [] : [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'phone', 'cpf'] }]),
     ],
   });
   if (!order) throw ApiError.notFound('Pedido não encontrado');
@@ -181,6 +184,7 @@ async function listAllOrders({ status, page = 1 } = {}) {
 
   const { rows, count } = await Order.findAndCountAll({
     where,
+    include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }],
     order: [['createdAt', 'DESC']],
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,

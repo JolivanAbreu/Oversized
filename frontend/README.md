@@ -1,4 +1,4 @@
-# Blusã Oversized Store — Loja Virtual
+# Dravennx — Loja Virtual
 
 Frontend da loja (cliente final), em React 19 + Vite + Tailwind CSS v4,
 consumindo a API REST do backend.

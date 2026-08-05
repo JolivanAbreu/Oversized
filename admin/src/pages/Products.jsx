@@ -60,12 +60,14 @@ export default function Products() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-soft">
+                <th className="px-4 py-3"></th>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Preço</th>
                 <th className="px-4 py-3">Variações</th>
                 <th className="px-4 py-3">Estoque total</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -74,7 +76,14 @@ export default function Products() {
                 return (
                   <tr key={product.id} className="border-b border-line last:border-0 hover:bg-canvas">
                     <td className="px-4 py-3">
-                      <Link to={`/produtos/${product.id}`} className="font-medium hover:text-tag">{product.name}</Link>
+                      {product.images?.[0]?.url ? (
+                        <img src={product.images[0].url} alt="" className="h-10 w-10 rounded object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-canvas-alt" />
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-medium">{product.name}</span>
                     </td>
                     <td className="px-4 py-3 text-ink-soft">{product.category?.name || '—'}</td>
                     <td className="px-4 py-3 font-mono">{formatPrice(product.basePrice)}</td>
@@ -84,6 +93,11 @@ export default function Products() {
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill label={product.active ? 'Ativo' : 'Inativo'} tone={product.active ? 'lime' : 'neutral'} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link to={`/produtos/${product.id}`}>
+                        <Button variant="secondary" size="sm">Editar</Button>
+                      </Link>
                     </td>
                   </tr>
                 );

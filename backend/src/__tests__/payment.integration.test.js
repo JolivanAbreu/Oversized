@@ -39,7 +39,7 @@ async function createOrderWithItem(token) {
   await request(app).post('/v1/cart/items').set('Authorization', `Bearer ${token}`).send({ variant_id: variantId, quantity: 1 });
   const addressId = await createAddress(token);
   const res = await request(app).post('/v1/orders').set('Authorization', `Bearer ${token}`).send({
-    address_id: addressId, shipping_option_id: 'standard',
+    address_id: addressId, shipping_option_id: 'uberflex',
   });
   return res.body;
 }

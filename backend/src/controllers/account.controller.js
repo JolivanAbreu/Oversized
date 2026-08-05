@@ -13,6 +13,15 @@ const updateMe = asyncHandler(async (req, res) => {
   res.json({ id: user.id, name: user.name, email: user.email, cpf: user.cpf, phone: user.phone, role: user.role });
 });
 
+const changeEmail = asyncHandler(async (req, res) => {
+  const { new_email: newEmail, current_password: currentPassword } = req.body;
+  if (!newEmail || !currentPassword) {
+    throw ApiError.badRequest('new_email e current_password são obrigatórios');
+  }
+  const user = await accountService.changeEmail(req.user.id, { newEmail, currentPassword });
+  res.json({ id: user.id, name: user.name, email: user.email, cpf: user.cpf, phone: user.phone, role: user.role });
+});
+
 const changePassword = asyncHandler(async (req, res) => {
   const { current_password: currentPassword, new_password: newPassword } = req.body;
   if (!currentPassword || !newPassword) {
@@ -22,4 +31,4 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ message: 'Senha atualizada com sucesso' });
 });
 
-module.exports = { getMe, updateMe, changePassword };
+module.exports = { getMe, updateMe, changeEmail, changePassword };

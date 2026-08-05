@@ -55,6 +55,7 @@ export default function Orders() {
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-soft">
                 <th className="px-4 py-3">Pedido</th>
+                <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Total</th>
                 <th className="px-4 py-3">Status</th>
@@ -65,6 +66,10 @@ export default function Orders() {
                 <tr key={order.id} className="border-b border-line last:border-0 hover:bg-canvas">
                   <td className="px-4 py-3">
                     <Link to={`/pedidos/${order.id}`} className="font-mono font-medium hover:text-tag">{order.orderNumber}</Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p>{order.user?.name || '—'}</p>
+                    <p className="text-xs text-ink-soft">{order.user?.email}</p>
                   </td>
                   <td className="px-4 py-3 text-ink-soft">{formatDateTime(order.createdAt)}</td>
                   <td className="px-4 py-3 font-mono">{formatPrice(order.total)}</td>

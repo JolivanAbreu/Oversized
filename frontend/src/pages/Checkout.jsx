@@ -197,10 +197,16 @@ export default function Checkout() {
                       <input type="radio" name="shipping" checked={selectedShipping === option.id} onChange={() => setSelectedShipping(option.id)} />
                       <span>
                         <span className="block font-display text-lg leading-none">{option.name}</span>
-                        <span className="font-mono text-xs text-ink-soft">até {option.estimatedDays} dias úteis</span>
+                        <span className="font-mono text-xs text-ink-soft">
+                          {option.requiresArrangement
+                            ? (option.note || 'Combinado após a compra')
+                            : option.estimatedDays === 0
+                              ? 'Entrega no mesmo dia'
+                              : `até ${option.estimatedDays} dias úteis`}
+                        </span>
                       </span>
                     </span>
-                    <span className="font-mono text-sm">{formatPrice(option.price)}</span>
+                    <span className="font-mono text-sm">{option.price > 0 ? formatPrice(option.price) : 'a combinar'}</span>
                   </label>
                 ))}
               </div>

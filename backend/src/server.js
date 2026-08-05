@@ -35,7 +35,7 @@ async function start() {
 
     app.listen(PORT, () => {
       // eslint-disable-next-line no-console
-      console.log(`[server] Blusã Oversized Store API rodando na porta ${PORT} (${process.env.NODE_ENV || 'development'})`);
+      console.log(`[server] Dravennx API rodando na porta ${PORT} (${process.env.NODE_ENV || 'development'})`);
     });
   } catch (err) {
     // eslint-disable-next-line no-console

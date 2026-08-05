@@ -6,7 +6,7 @@ async function sendEmailConfirmation(user, token) {
   const link = `${FRONTEND_URL}/confirmar-email?token=${token}`;
   await sendMail({
     to: user.email,
-    subject: 'Confirme seu e-mail — Blusã Oversized Store',
+    subject: 'Confirme seu e-mail — Dravennx',
     html: `<p>Olá, ${user.name}!</p><p>Confirme seu e-mail clicando no link abaixo:</p><p><a href="${link}">${link}</a></p>`,
   });
 }
@@ -15,7 +15,7 @@ async function sendPasswordReset(user, token) {
   const link = `${FRONTEND_URL}/redefinir-senha?token=${token}`;
   await sendMail({
     to: user.email,
-    subject: 'Redefinição de senha — Blusã Oversized Store',
+    subject: 'Redefinição de senha — Dravennx',
     html: `<p>Olá, ${user.name}!</p><p>Clique no link abaixo para redefinir sua senha (válido por 1 hora):</p><p><a href="${link}">${link}</a></p><p>Se você não solicitou, ignore este e-mail.</p>`,
   });
 }

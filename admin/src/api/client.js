@@ -91,4 +91,33 @@ export const api = {
   delete: (path, opts) => apiFetch(path, { ...opts, method: 'DELETE' }),
 };
 
+/**
+ * Upload de arquivo via multipart/form-data — não usa apiFetch porque aquele
+ * sempre serializa o corpo como JSON. O header Content-Type é deixado para o
+ * navegador definir sozinho (inclui o boundary do multipart automaticamente).
+ */
+export async function uploadFile(path, file) {
+  const token = getAccessToken();
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  let payload = null;
+  try {
+    payload = await res.json();
+  } catch (err) {
+    // sem corpo JSON
+  }
+
+  if (!res.ok) {
+    throw new ApiError(res.status, payload?.error, payload?.message || 'Erro ao enviar arquivo');
+  }
+  return payload;
+}
+
 export { ApiError };

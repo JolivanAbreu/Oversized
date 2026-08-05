@@ -4,6 +4,7 @@ const { authenticate } = require('../middlewares/auth');
 
 router.get('/account', authenticate, controller.getMe);
 router.put('/account', authenticate, controller.updateMe);
+router.put('/account/email', authenticate, controller.changeEmail);
 router.put('/account/password', authenticate, controller.changePassword);
 
 module.exports = router;

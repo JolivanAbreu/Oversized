@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api, ApiError } from '../api/client';
+import { api, ApiError, uploadFile } from '../api/client';
 import Field, { inputClass } from '../components/Field';
 import Button from '../components/Button';
 import { ErrorNotice, LoadingBlock } from '../components/States';
@@ -77,6 +77,8 @@ export default function ProductForm() {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     api.get('/categories', { auth: false }).then(setCategories);
@@ -118,6 +120,23 @@ export default function ProductForm() {
   }
   function removeImage(tempId) {
     setImages((prev) => prev.filter((img) => img.tempId !== tempId));
+  }
+
+  async function handleFileUpload(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite selecionar o mesmo arquivo de novo depois
+    if (!file) return;
+
+    setUploadError('');
+    setUploadingImage(true);
+    try {
+      const result = await uploadFile('/admin/uploads', file);
+      setImages((prev) => [...prev, { tempId: nextTempId(), url: result.url }]);
+    } catch (err) {
+      setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar a imagem.');
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -256,15 +275,33 @@ export default function ProductForm() {
         <section className="rounded-lg border border-line bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Imagens</h2>
-            <Button type="button" variant="secondary" size="sm" onClick={() => setImages((prev) => [...prev, emptyImage()])}>
-              + Adicionar imagem
-            </Button>
+            <div className="flex gap-2">
+              <label className="cursor-pointer">
+                <span className="inline-flex items-center justify-center gap-2 rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink">
+                  {uploadingImage ? 'Enviando...' : '📁 Enviar do computador'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={handleFileUpload}
+                />
+              </label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setImages((prev) => [...prev, emptyImage()])}>
+                + Colar URL
+              </Button>
+            </div>
           </div>
+          {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
           <div className="mt-4 space-y-2">
             {images.map((img) => (
-              <div key={img.tempId} className="flex gap-2">
+              <div key={img.tempId} className="flex items-center gap-2">
+                {img.url && (
+                  <img src={img.url} alt="" className="h-10 w-10 shrink-0 rounded object-cover" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+                )}
                 <input className={inputClass} placeholder="https://..." value={img.url} onChange={(e) => updateImage(img.tempId, { url: e.target.value })} />
-                <button type="button" onClick={() => removeImage(img.tempId)} className="text-xs text-ink-soft hover:text-danger">remover</button>
+                <button type="button" onClick={() => removeImage(img.tempId)} className="shrink-0 text-xs text-ink-soft hover:text-danger">remover</button>
               </div>
             ))}
             {images.length === 0 && <p className="text-xs text-ink-soft">Nenhuma imagem cadastrada — a loja usa uma ilustração padrão nesse caso.</p>}

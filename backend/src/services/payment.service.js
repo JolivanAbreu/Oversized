@@ -44,7 +44,7 @@ async function payWithCard(userId, { orderId, cardToken, installments }) {
     token: cardToken,
     installments,
     transactionAmount: Number(order.total),
-    description: `Pedido ${order.orderNumber} — Blusã Oversized Store`,
+    description: `Pedido ${order.orderNumber} — Dravennx`,
     payer: { email: user.email },
     externalReference: order.id,
   }));
@@ -81,7 +81,7 @@ async function payWithPix(userId, { orderId }) {
 
   const mpResponse = await callMercadoPago(() => mercadopago.createPixPayment({
     transactionAmount: Number(order.total),
-    description: `Pedido ${order.orderNumber} — Blusã Oversized Store`,
+    description: `Pedido ${order.orderNumber} — Dravennx`,
     payer: { email: user.email },
     externalReference: order.id,
   }));

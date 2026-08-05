@@ -2,19 +2,20 @@
 @import "tailwindcss";
 
 @theme {
-  /* Paleta: papel/bone frio (não creme), tinta quase-preta, laranja de etiqueta
-     de segurança (bem mais saturado/vermelho que o terracota D97757) e lima
-     de adesivo — evitando os três "olhares padrão" de design gerado por IA. */
-  --color-canvas: #EDEBE2;
-  --color-canvas-alt: #E3E0D3;
-  --color-ink: #17161C;
-  --color-ink-soft: #3A3945;
-  --color-tag: #FF4B1F;
-  --color-tag-dark: #D93C15;
-  --color-lime: #D6FF3F;
-  --color-line: #C9C4B3;
+  /* Paleta oficial da marca Dravennx — escala de cinza neutra (Coolors:
+     F8F9FA → 212529). Sem matiz nenhuma: hierarquia e estado (sucesso/erro/
+     atenção) são comunicados por contraste de tom, não por cor — abordagem
+     editorial/monocromática, coerente com o tom "dark/electric" da marca. */
+  --color-canvas: #F8F9FA;
+  --color-canvas-alt: #E9ECEF;
+  --color-line: #CED4DA;
+  --color-ink: #212529;
+  --color-ink-soft: #6C757D;
+  --color-tag: #212529;
+  --color-tag-dark: #000000;
+  --color-lime: #E9ECEF;
+  --color-danger: #343A40;
   --color-white: #FFFFFF;
-  --color-danger: #C0392B;
 
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
   --font-mono: 'Space Mono', ui-monospace, monospace;

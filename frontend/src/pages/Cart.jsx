@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import GarmentArt from '../components/GarmentArt';
+import ProductMedia from '../components/ProductMedia';
 import Button from '../components/Button';
 import { EmptyState } from '../components/States';
 import { formatPrice } from '../lib/format';
@@ -39,7 +39,7 @@ export default function Cart() {
         {cart.items.map((item) => (
           <div key={item.id} className="flex gap-4 py-5">
             <div className="h-24 w-20 shrink-0 border-2 border-ink bg-canvas-alt">
-              <GarmentArt color={item.variant.color} className="h-full w-full" />
+              <ProductMedia product={item.variant.product} color={item.variant.color} className="h-full w-full" />
             </div>
             <div className="flex flex-1 flex-col justify-between">
               <div className="flex items-start justify-between gap-4">

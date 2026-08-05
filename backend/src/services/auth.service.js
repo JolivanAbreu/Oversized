@@ -22,9 +22,15 @@ function issueTokens(user) {
 }
 
 async function register({ name, email, password, cpf, phone }) {
-  const existing = await User.findOne({ where: { email } });
-  if (existing) {
+  const existingByEmail = await User.findOne({ where: { email } });
+  if (existingByEmail) {
     throw ApiError.conflict('E-mail já cadastrado', 'email_already_registered');
+  }
+  if (cpf) {
+    const existingByCpf = await User.findOne({ where: { cpf } });
+    if (existingByCpf) {
+      throw ApiError.conflict('Já existe uma conta cadastrada com este CPF', 'cpf_already_registered');
+    }
   }
 
   const passwordHash = await bcrypt.hash(password, 12);

@@ -19,6 +19,11 @@ export default function Account() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const [emailForm, setEmailForm] = useState({ newEmail: '', currentPassword: '' });
+  const [emailError, setEmailError] = useState('');
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+
   useEffect(() => {
     api.get('/account').then((data) => {
       setProfile(data);
@@ -41,6 +46,34 @@ export default function Account() {
       setProfileError(err instanceof ApiError ? err.message : 'Não foi possível salvar.');
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function handleChangeEmail(e) {
+    e.preventDefault();
+    setEmailError('');
+    setEmailSaved(false);
+
+    if (!emailForm.newEmail || !emailForm.currentPassword) {
+      setEmailError('Preencha o novo e-mail e sua senha atual.');
+      return;
+    }
+
+    setSavingEmail(true);
+    try {
+      const updated = await api.put('/account/email', {
+        new_email: emailForm.newEmail,
+        current_password: emailForm.currentPassword,
+      });
+      setProfile(updated);
+      setUser({ email: updated.email });
+      setEmailForm({ newEmail: '', currentPassword: '' });
+      setEmailSaved(true);
+      setTimeout(() => setEmailSaved(false), 2500);
+    } catch (err) {
+      setEmailError(err instanceof ApiError ? err.message : 'Não foi possível trocar o e-mail.');
+    } finally {
+      setSavingEmail(false);
     }
   }
 
@@ -89,7 +122,7 @@ export default function Account() {
           <Field label="Telefone">
             <input inputMode="numeric" placeholder="(00) 00000-0000" className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })} />
           </Field>
-          <Field label="E-mail" hint="O e-mail de login não pode ser alterado por aqui.">
+          <Field label="E-mail" hint="Use a seção abaixo para trocar seu e-mail.">
             <input disabled className={`${inputClass} cursor-not-allowed opacity-60`} value={profile.email} readOnly />
           </Field>
           <Field label="CPF" hint="Documento fixo, não pode ser alterado.">
@@ -99,6 +132,24 @@ export default function Account() {
           {profileSaved && <p className="font-mono text-xs text-tag">Dados atualizados ✓</p>}
           <Button type="submit" variant="tag" disabled={savingProfile}>
             {savingProfile ? 'Salvando...' : 'Salvar alterações'}
+          </Button>
+        </form>
+      </section>
+
+      <section className="mt-8 border-2 border-ink p-6">
+        <h2 className="font-display text-2xl">Trocar e-mail</h2>
+        <p className="mt-1 text-sm text-ink-soft">E-mail atual: {profile.email}</p>
+        <form onSubmit={handleChangeEmail} className="mt-4 space-y-4">
+          <Field label="Novo e-mail">
+            <input type="email" required className={inputClass} value={emailForm.newEmail} onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })} />
+          </Field>
+          <Field label="Senha atual" hint="Confirme sua senha para trocar o e-mail">
+            <input type="password" required className={inputClass} value={emailForm.currentPassword} onChange={(e) => setEmailForm({ ...emailForm, currentPassword: e.target.value })} />
+          </Field>
+          <ErrorNotice message={emailError} />
+          {emailSaved && <p className="font-mono text-xs text-tag">E-mail atualizado ✓</p>}
+          <Button type="submit" variant="secondary" disabled={savingEmail}>
+            {savingEmail ? 'Salvando...' : 'Trocar e-mail'}
           </Button>
         </form>
       </section>

@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendMail({ to, subject, html }) {
   return transporter.sendMail({
-    from: process.env.SMTP_FROM || '"Blusã Oversized Store" <naoresponda@blusaoversized.com.br>',
+    from: process.env.SMTP_FROM || '"Dravennx" <naoresponda@dravennx.com.br>',
     to,
     subject,
     html,

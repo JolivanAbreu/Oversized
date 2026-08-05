@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import GarmentArt from '../components/GarmentArt';
+import ProductMedia from '../components/ProductMedia';
 import Tag from '../components/Tag';
 import Button from '../components/Button';
 import { LoadingBlock, ErrorNotice } from '../components/States';
@@ -64,7 +64,7 @@ export default function ProductDetail() {
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="relative border-2 border-ink bg-canvas-alt">
-          <GarmentArt color={selectedColor} className="h-[32rem] w-full" />
+          <ProductMedia product={product} color={selectedColor} className="h-[32rem] w-full" />
           <div className="absolute left-4 top-4">
             <Tag variant="tag">{formatPrice(price)}</Tag>
           </div>

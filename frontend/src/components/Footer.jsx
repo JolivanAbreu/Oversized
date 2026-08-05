@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8">
         <div className="grid gap-10 sm:grid-cols-3">
           <div>
-            <p className="font-display text-3xl">BLUSÃO</p>
+            <p className="font-display text-3xl">DRAVENNX</p>
             <p className="mt-3 max-w-xs text-sm text-white/60">
               Peças de caimento largo, feitas para sobrar — não pra apertar.
               Loja independente de blusas e moletons oversized.
@@ -13,7 +13,7 @@ export default function Footer() {
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-white/40">Atendimento</p>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li>contato@blusaoversized.com.br</li>
+              <li>contato@dravennx.com.br</li>
               <li>Seg a sex, 9h às 18h</li>
               <li>Trocas e devoluções em 30 dias</li>
             </ul>
@@ -27,7 +27,7 @@ export default function Footer() {
           </div>
         </div>
         <p className="mt-12 font-mono text-[11px] text-white/30">
-          © {new Date().getFullYear()} Blusã Oversized Store
+          © {new Date().getFullYear()} Dravennx
         </p>
       </div>
     </footer>
