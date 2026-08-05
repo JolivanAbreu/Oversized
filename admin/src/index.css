@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Mesma família de marca da loja (ink/tag/lime), reexpressa para um painel
+     operacional: aqui a prioridade é densidade e leitura rápida de status,
+     não a tipografia gigante da vitrine. Acrescenta --color-warn (âmbar)
+     para o terceiro estado que um painel de operação sempre precisa e a loja
+     não tinha: "atenção/pendente". */
+  --color-canvas: #F7F6F2;
+  --color-surface: #FFFFFF;
+  --color-ink: #17161C;
+  --color-ink-soft: #5B5A66;
+  --color-tag: #FF4B1F;
+  --color-tag-dark: #D93C15;
+  --color-lime: #2E7D32;
+  --color-lime-bg: #E4F3E5;
+  --color-warn: #B7791F;
+  --color-warn-bg: #FBF0DA;
+  --color-line: #E2E0D8;
+  --color-white: #FFFFFF;
+  --color-danger: #C0392B;
+  --color-danger-bg: #FBE7E4;
+
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 2px; }
+
+/* Selo de status — versão compacta e operacional do elemento de assinatura
+   da loja (a etiqueta de roupa), aqui usado para status de pedido/estoque
+   em tabelas densas em vez de badges genéricos coloridos. */
+.status-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+.status-pill::before {
+  content: '';
+  position: absolute;
+  left: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: currentColor;
+}

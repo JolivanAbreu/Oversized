@@ -8,6 +8,15 @@ const { sequelize } = require('../models');
 
 // --- Produtos ---
 
+const listProducts = asyncHandler(async (req, res) => {
+  const { search, page } = req.query;
+  res.json(await productService.listProductsForAdmin({ search, page }));
+});
+
+const getProduct = asyncHandler(async (req, res) => {
+  res.json(await productService.getProductForAdmin(req.params.id));
+});
+
 const createProduct = asyncHandler(async (req, res) => {
   const { categoryId, name, slug, basePrice } = req.body;
   if (!categoryId || !name || !slug || !basePrice) {
@@ -24,6 +33,10 @@ const updateProduct = asyncHandler(async (req, res) => {
 const deactivateProduct = asyncHandler(async (req, res) => {
   await productService.deactivateProduct(req.params.id);
   res.status(204).send();
+});
+
+const reactivateProduct = asyncHandler(async (req, res) => {
+  res.json(await productService.reactivateProduct(req.params.id));
 });
 
 const adjustStock = asyncHandler(async (req, res) => {
@@ -110,7 +123,7 @@ const dashboardMetrics = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  createProduct, updateProduct, deactivateProduct, adjustStock,
+  listProducts, getProduct, createProduct, updateProduct, deactivateProduct, reactivateProduct, adjustStock,
   listOrders, getOrder, updateOrderStatus,
   createCoupon, listCoupons, setCouponActive,
   dashboardMetrics,

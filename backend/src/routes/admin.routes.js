@@ -6,10 +6,14 @@ const { requireRole } = require('../middlewares/rbac');
 // Aplica autenticação + verificação de perfil em cada rota individualmente
 // (nunca via router.use sem prefixo — ver nota em routes/index.js).
 
-// Produtos e estoque — administrador
+// Produtos e estoque — leitura liberada para admin e operador (operador
+// precisa listar/ver produtos para ajustar estoque); escrita restrita a admin
+router.get('/admin/products', authenticate, requireRole('admin', 'operator'), controller.listProducts);
+router.get('/admin/products/:id', authenticate, requireRole('admin', 'operator'), controller.getProduct);
 router.post('/admin/products', authenticate, requireRole('admin'), controller.createProduct);
 router.put('/admin/products/:id', authenticate, requireRole('admin'), controller.updateProduct);
 router.delete('/admin/products/:id', authenticate, requireRole('admin'), controller.deactivateProduct);
+router.put('/admin/products/:id/reactivate', authenticate, requireRole('admin'), controller.reactivateProduct);
 router.put('/admin/variants/:variantId/stock', authenticate, requireRole('admin', 'operator'), controller.adjustStock);
 
 // Pedidos — administrador e operador

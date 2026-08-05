@@ -1,0 +1,135 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { api, ApiError } from '../api/client';
+import StatusPill from '../components/StatusPill';
+import Button from '../components/Button';
+import { inputClass } from '../components/Field';
+import { ErrorNotice, SuccessNotice, LoadingBlock } from '../components/States';
+import { formatPrice, formatDateTime, ORDER_STATUS_LABELS, ORDER_STATUS_TONE, ORDER_NEXT_STATUSES } from '../lib/format';
+
+export default function OrderDetail() {
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [nextStatus, setNextStatus] = useState('');
+  const [trackingCode, setTrackingCode] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  function load() {
+    api.get(`/admin/orders/${id}`).then((data) => {
+      setOrder(data);
+      setNextStatus('');
+      setTrackingCode(data.trackingCode || '');
+    });
+  }
+
+  useEffect(load, [id]);
+
+  async function handleUpdateStatus(e) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!nextStatus) return;
+    if (nextStatus === 'enviado' && !trackingCode) {
+      setError('Informe o código de rastreio para marcar como enviado.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await api.put(`/admin/orders/${id}/status`, { status: nextStatus, trackingCode: nextStatus === 'enviado' ? trackingCode : undefined });
+      setSuccess('Status atualizado.');
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível atualizar o status.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!order) return <LoadingBlock label="Carregando pedido" />;
+
+  const options = ORDER_NEXT_STATUSES[order.status] || [];
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-mono text-2xl font-semibold">{order.orderNumber}</h1>
+          <p className="mt-1 text-sm text-ink-soft">{formatDateTime(order.createdAt)}</p>
+        </div>
+        <StatusPill label={ORDER_STATUS_LABELS[order.status]} tone={ORDER_STATUS_TONE[order.status]} />
+      </div>
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <section className="rounded-lg border border-line bg-white p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Itens</h2>
+          <div className="mt-3 space-y-3">
+            {order.items?.map((item) => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <div>
+                  <p className="font-medium">{item.variant?.product?.name}</p>
+                  <p className="text-xs text-ink-soft">{item.variant?.size} · {item.variant?.color} · qtd {item.quantity}</p>
+                </div>
+                <p className="font-mono">{formatPrice(item.unitPrice * item.quantity)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 space-y-1 border-t border-line pt-3 font-mono text-sm">
+            <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
+            {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-ink-soft">Desconto</span><span>−{formatPrice(order.discount)}</span></div>}
+            <div className="flex justify-between"><span className="text-ink-soft">Frete</span><span>{formatPrice(order.shippingCost)}</span></div>
+            <div className="flex justify-between border-t border-line pt-1 font-semibold"><span>Total</span><span>{formatPrice(order.total)}</span></div>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-line bg-white p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Endereço de entrega</h2>
+          {order.address ? (
+            <p className="mt-3 text-sm">
+              {order.address.street}, {order.address.number}
+              {order.address.complement && ` — ${order.address.complement}`}
+              <br />{order.address.neighborhood}, {order.address.city}/{order.address.state}
+              <br />CEP {order.address.zip}
+            </p>
+          ) : <p className="mt-3 text-sm text-ink-soft">—</p>}
+
+          {order.payments?.length > 0 && (
+            <>
+              <h2 className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-soft">Pagamentos</h2>
+              <div className="mt-2 space-y-2">
+                {order.payments.map((p) => (
+                  <div key={p.id} className="flex justify-between text-xs">
+                    <span className="text-ink-soft">{p.method === 'pix' ? 'Pix' : 'Cartão'} · {formatDateTime(p.createdAt)}</span>
+                    <span>{p.status}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+
+      {options.length > 0 && (
+        <section className="mt-6 rounded-lg border border-line bg-white p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Atualizar status</h2>
+          <form onSubmit={handleUpdateStatus} className="mt-3 flex flex-wrap items-end gap-3">
+            <select className={`${inputClass} w-56`} value={nextStatus} onChange={(e) => setNextStatus(e.target.value)}>
+              <option value="">Selecione o novo status...</option>
+              {options.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
+            </select>
+            {nextStatus === 'enviado' && (
+              <input className={`${inputClass} w-56`} placeholder="Código de rastreio" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
+            )}
+            <Button type="submit" disabled={saving || !nextStatus}>{saving ? 'Salvando...' : 'Atualizar'}</Button>
+          </form>
+          <div className="mt-3">
+            <ErrorNotice message={error} />
+            <SuccessNotice message={success} />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
