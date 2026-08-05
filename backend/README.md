@@ -86,21 +86,35 @@ src/
   do Mercado Pago — o backend nunca recebe número de cartão, validade ou CVV.
 - **Pix**: o backend solicita a cobrança ao Mercado Pago e repassa o QR Code
   (base64) e o código copia-e-cola prontos; nenhuma geração de QR Code é feita
-  localmente.
+  localmente. O frontend faz **polling do status a cada 4s** (não depende do
+  webhook), então funciona mesmo em ambiente local.
 - **Webhook** (`POST /v1/webhooks/mercadopago`): toda notificação tem a
   assinatura HMAC validada antes de qualquer processamento, e o status oficial
-  é sempre reconfirmado via API do Mercado Pago (nunca se confia apenas no
-  payload recebido). O processamento é idempotente.
+  é sempre reconfirmado via API do Mercado Pago. Só funciona com uma
+  `API_PUBLIC_URL` pública de verdade (não localhost) — em dev local, o campo
+  `notification_url` é omitido automaticamente e o polling cobre o cenário.
 - **Estoque**: reservado atomicamente na criação do pedido (antes do
   pagamento) via UPDATE condicional no banco; liberado automaticamente pelo
-  job `src/jobs/expireReservations.js` quando o pedido não é pago em 30
-  minutos, ou imediatamente em caso de cancelamento/recusa.
+  job `src/jobs/expireReservations.js`, no cancelamento (`POST
+  /orders/:id/cancel`) ou na exclusão de pedidos não pagos (`DELETE
+  /orders/:id`).
+
+## Conta do usuário e ciclo de vida do pedido
+
+- `GET/PUT /account` e `PUT /account/password` — perfil e troca de senha
+  (exige senha atual).
+- `POST /orders/:id/cancel` — cliente cancela o próprio pedido enquanto ainda
+  não foi enviado; se já estava pago, aciona estorno automático.
+- `DELETE /orders/:id` — remove definitivamente um pedido, mas só quando ele
+  nunca chegou a ser pago (ou já está cancelado) — preserva o histórico
+  fiscal de qualquer pedido pago.
 
 ## Próximos passos sugeridos
 
 1. Testes ponta a ponta contra o sandbox real do Mercado Pago (esta suíte usa
    mocks; falta validar com credenciais de sandbox verdadeiras — cartões de
-   teste oficiais e o webhook de fato batendo na aplicação).
+   teste oficiais e o webhook de fato batendo na aplicação, o que exige uma
+   URL pública, ex.: via ngrok, ou o deploy em produção).
 2. Upload de imagens de produto (hoje o payload de criação de produto espera
    URLs já hospedadas — falta o endpoint de upload para Cloudinary/S3).
 3. Job de e-mail assíncrono (fila) para desacoplar completamente o envio de

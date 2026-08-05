@@ -48,6 +48,11 @@ export default function Login() {
             value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
         </Field>
+        <p className="text-right">
+          <Link to="/esqueci-a-senha" className="font-mono text-xs uppercase text-ink-soft underline decoration-dotted hover:text-tag">
+            Esqueci a senha
+          </Link>
+        </p>
 
         <ErrorNotice message={error} />
 

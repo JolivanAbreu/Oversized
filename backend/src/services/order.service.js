@@ -1,4 +1,4 @@
-const { Order, OrderItem, Address, ProductVariant, Product, User, sequelize } = require('../models');
+const { Order, OrderItem, Address, ProductVariant, Product, User, Payment, sequelize } = require('../models');
 const ApiError = require('../utils/apiError');
 const cartService = require('./cart.service');
 const couponService = require('./coupon.service');
@@ -91,6 +91,7 @@ async function getOrderById(userId, orderId) {
     include: [
       { model: OrderItem, as: 'items', include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] }] },
       { model: Address, as: 'address' },
+      { model: Payment, as: 'payments', separate: true, order: [['createdAt', 'DESC']] },
     ],
   });
   if (!order) throw ApiError.notFound('Pedido não encontrado');
@@ -187,6 +188,48 @@ async function listAllOrders({ status, page = 1 } = {}) {
   return { data: rows, page: Number(page), totalPages: Math.ceil(count / PAGE_SIZE), total: count };
 }
 
+// Status a partir dos quais o próprio cliente ainda pode cancelar o pedido —
+// depois de "enviado" o cancelamento passa a exigir contato com o suporte,
+// já que a mercadoria já está a caminho.
+const CUSTOMER_CANCELABLE_STATUSES = ['aguardando_pagamento', 'pago', 'em_separacao'];
+// Só é seguro apagar de vez pedidos que nunca chegaram a ser pagos — preserva
+// o histórico fiscal de qualquer pedido que teve pagamento aprovado.
+const CUSTOMER_DELETABLE_STATUSES = ['aguardando_pagamento', 'cancelado'];
+
+async function cancelOwnOrder(userId, orderId) {
+  const order = await Order.findOne({ where: { id: orderId, userId } });
+  if (!order) throw ApiError.notFound('Pedido não encontrado');
+
+  if (!CUSTOMER_CANCELABLE_STATUSES.includes(order.status)) {
+    throw ApiError.unprocessable(
+      'Este pedido não pode mais ser cancelado por aqui — fale com o suporte.',
+      'order_not_cancelable'
+    );
+  }
+
+  return updateOrderStatus(orderId, 'cancelado');
+}
+
+async function deleteOwnOrder(userId, orderId) {
+  const order = await Order.findOne({ where: { id: orderId, userId } });
+  if (!order) throw ApiError.notFound('Pedido não encontrado');
+
+  if (!CUSTOMER_DELETABLE_STATUSES.includes(order.status)) {
+    throw ApiError.unprocessable(
+      'Só é possível excluir pedidos cancelados ou que ainda não foram pagos.',
+      'order_not_deletable'
+    );
+  }
+
+  // Se o pedido ainda reservava estoque (nunca chegou a ser pago nem
+  // cancelado formalmente), libera antes de remover — evita órfãos de estoque.
+  if (order.status === 'aguardando_pagamento') {
+    await releaseOrderStock(order);
+  }
+
+  await Order.destroy({ where: { id: orderId } }); // cascade remove order_items/payments (ver migrations)
+}
+
 module.exports = {
   createOrder,
   listOrdersForUser,
@@ -195,4 +238,6 @@ module.exports = {
   releaseOrderStock,
   listAllOrders,
   assertValidTransition,
+  cancelOwnOrder,
+  deleteOwnOrder,
 };

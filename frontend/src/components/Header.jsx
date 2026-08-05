@@ -22,12 +22,13 @@ export default function Header() {
           <NavLink to="/produtos" className={navLinkClass}>Loja</NavLink>
           <NavLink to="/produtos?category=blusas-oversized" className={navLinkClass}>Blusas</NavLink>
           {isAuthenticated && <NavLink to="/minha-conta/pedidos" className={navLinkClass}>Meus pedidos</NavLink>}
+          {isAuthenticated && <NavLink to="/minha-conta/enderecos" className={navLinkClass}>Endereços</NavLink>}
         </nav>
 
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <div className="hidden items-center gap-3 sm:flex">
-              <span className="font-mono text-xs text-white/70">Olá, {user.name.split(' ')[0]}</span>
+              <Link to="/minha-conta" className="font-mono text-xs text-white/70 hover:text-tag">Olá, {user.name.split(' ')[0]}</Link>
               <button onClick={logout} className="font-mono text-xs uppercase text-white/70 underline decoration-dotted hover:text-tag">
                 Sair
               </button>

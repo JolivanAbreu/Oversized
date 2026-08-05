@@ -7,9 +7,9 @@ import Button from '../components/Button';
 import Tag from '../components/Tag';
 import { ErrorNotice, LoadingBlock } from '../components/States';
 import { formatPrice } from '../lib/format';
-import { isCardPaymentConfigured, tokenizeCard } from '../lib/mercadopago';
-import { maskCEP, maskUF, maskCardNumber, maskExpirationMonth, maskExpirationYear, maskCVV, maskCPF } from '../lib/masks';
+import { maskCEP, maskUF } from '../lib/masks';
 import { useCepAutofill } from '../lib/useCepAutofill';
+import PaymentPanel from '../components/PaymentPanel';
 
 const STEPS = ['Endereço', 'Frete', 'Pagamento'];
 
@@ -31,11 +31,7 @@ export default function Checkout() {
   const [couponResult, setCouponResult] = useState(null);
   const [couponError, setCouponError] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState('pix');
-  const [card, setCard] = useState({ cardNumber: '', cardholderName: '', expirationMonth: '', expirationYear: '', securityCode: '', identificationNumber: '', installments: 1 });
-
   const [order, setOrder] = useState(null);
-  const [pixData, setPixData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -114,34 +110,9 @@ export default function Checkout() {
     }
   }
 
-  async function payWithPix() {
-    setError('');
-    setLoading(true);
-    try {
-      const result = await api.post('/payments/pix', { order_id: order.id });
-      setPixData(result);
-      refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível gerar o Pix.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function payWithCard(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const cardToken = await tokenizeCard(card);
-      await api.post('/payments/card', { order_id: order.id, card_token: cardToken, installments: Number(card.installments) });
-      refresh();
-      navigate(`/minha-conta/pedidos/${order.id}`, { state: { justPaid: true } });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Pagamento não autorizado.');
-    } finally {
-      setLoading(false);
-    }
+  function handlePaid() {
+    refresh();
+    navigate(`/minha-conta/pedidos/${order.id}`, { state: { justPaid: true } });
   }
 
   const shippingCost = shippingOptions?.find((o) => o.id === selectedShipping)?.price || 0;
@@ -262,64 +233,7 @@ export default function Checkout() {
           {step === 2 && order && (
             <div className="space-y-6">
               <Tag variant="lime">pedido {order.orderNumber} criado — aguardando pagamento</Tag>
-
-              <div className="flex gap-2 border-b-2 border-ink pb-4">
-                <button onClick={() => setPaymentMethod('pix')} className={`border-2 px-4 py-2 font-mono text-xs uppercase ${paymentMethod === 'pix' ? 'border-ink bg-ink text-white' : 'border-line'}`}>Pix</button>
-                <button onClick={() => setPaymentMethod('card')} className={`border-2 px-4 py-2 font-mono text-xs uppercase ${paymentMethod === 'card' ? 'border-ink bg-ink text-white' : 'border-line'}`}>Cartão de crédito</button>
-              </div>
-
-              {paymentMethod === 'pix' && (
-                <div className="space-y-4">
-                  {!pixData && (
-                    <Button variant="tag" size="lg" onClick={payWithPix} disabled={loading}>
-                      {loading ? 'Gerando Pix...' : 'Gerar QR Code Pix'}
-                    </Button>
-                  )}
-                  {pixData && (
-                    <div className="border-2 border-ink p-6 text-center">
-                      <p className="font-mono text-xs uppercase text-ink-soft">Escaneie ou copie o código abaixo</p>
-                      {pixData.qr_code_base64 && (
-                        <img src={`data:image/png;base64,${pixData.qr_code_base64}`} alt="QR Code Pix" className="mx-auto mt-4 h-48 w-48" />
-                      )}
-                      <textarea readOnly className="mt-4 w-full border-2 border-line bg-canvas-alt p-2 font-mono text-xs" rows={3} value={pixData.copy_paste_code || ''} />
-                      <p className="mt-3 font-mono text-xs text-ink-soft">expira às {new Date(pixData.expires_at).toLocaleTimeString('pt-BR')}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {paymentMethod === 'card' && (
-                <form onSubmit={payWithCard} className="space-y-4">
-                  {!isCardPaymentConfigured() && (
-                    <ErrorNotice message="Pagamento por cartão requer a chave pública de sandbox do Mercado Pago (VITE_MERCADOPAGO_PUBLIC_KEY). Use Pix para testar o fluxo completo." />
-                  )}
-                  <Field label="Número do cartão">
-                    <input required inputMode="numeric" placeholder="0000 0000 0000 0000" className={inputClass} value={card.cardNumber} onChange={(e) => setCard({ ...card, cardNumber: maskCardNumber(e.target.value) })} />
-                  </Field>
-                  <Field label="Nome impresso no cartão">
-                    <input required className={inputClass} value={card.cardholderName} onChange={(e) => setCard({ ...card, cardholderName: e.target.value.toUpperCase() })} />
-                  </Field>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Field label="Mês"><input required inputMode="numeric" placeholder="MM" className={inputClass} value={card.expirationMonth} onChange={(e) => setCard({ ...card, expirationMonth: maskExpirationMonth(e.target.value) })} /></Field>
-                    <Field label="Ano"><input required inputMode="numeric" placeholder="AAAA" className={inputClass} value={card.expirationYear} onChange={(e) => setCard({ ...card, expirationYear: maskExpirationYear(e.target.value) })} /></Field>
-                    <Field label="CVV"><input required inputMode="numeric" placeholder="000" className={inputClass} value={card.securityCode} onChange={(e) => setCard({ ...card, securityCode: maskCVV(e.target.value) })} /></Field>
-                  </div>
-                  <Field label="CPF do titular">
-                    <input required inputMode="numeric" placeholder="000.000.000-00" className={inputClass} value={card.identificationNumber} onChange={(e) => setCard({ ...card, identificationNumber: maskCPF(e.target.value) })} />
-                  </Field>
-                  <Field label="Parcelas">
-                    <select className={inputClass} value={card.installments} onChange={(e) => setCard({ ...card, installments: e.target.value })}>
-                      {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}x</option>)}
-                    </select>
-                  </Field>
-                  <ErrorNotice message={error} />
-                  <Button type="submit" variant="tag" size="lg" disabled={loading || !isCardPaymentConfigured()}>
-                    {loading ? 'Processando...' : `Pagar ${formatPrice(total)}`}
-                  </Button>
-                </form>
-              )}
-
-              <ErrorNotice message={paymentMethod === 'pix' ? error : ''} />
+              <PaymentPanel order={order} total={total} onPaid={handlePaid} />
             </div>
           )}
         </div>

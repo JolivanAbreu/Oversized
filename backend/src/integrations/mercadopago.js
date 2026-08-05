@@ -9,11 +9,35 @@ const client = new MercadoPagoConfig({
 const paymentClient = new Payment(client);
 
 /**
+ * Monta a notification_url apenas quando há uma URL pública válida
+ * configurada. Em ambiente local (localhost/127.0.0.1) o Mercado Pago nunca
+ * conseguiria alcançar o webhook mesmo assim — e enviar uma URL relativa ou
+ * inválida faz a própria criação do pagamento falhar ("notification_url
+ * attribute must be url valid"). Por isso omitimos o campo nesses casos: o
+ * pagamento continua funcionando normalmente, só não dispara webhook — o
+ * app já tem um fallback de consulta direta de status (polling) para cobrir
+ * exatamente esse cenário.
+ */
+function buildNotificationUrl() {
+  const base = process.env.API_PUBLIC_URL || '';
+  if (!base) return undefined;
+  try {
+    const url = new URL(base);
+    const isLocal = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+    if (isLocal) return undefined;
+    return `${base.replace(/\/$/, '')}/v1/webhooks/mercadopago`;
+  } catch (err) {
+    return undefined; // API_PUBLIC_URL mal formada — melhor omitir do que quebrar o pagamento
+  }
+}
+
+/**
  * Cria um pagamento com cartão de crédito usando o token gerado no navegador
  * pelo SDK JS do Mercado Pago (Checkout Transparente). Os dados do cartão nunca
  * passam pelo nosso backend — apenas o token.
  */
 async function createCardPayment({ token, installments, transactionAmount, description, payer, externalReference }) {
+  const notificationUrl = buildNotificationUrl();
   return paymentClient.create({
     body: {
       token,
@@ -23,7 +47,7 @@ async function createCardPayment({ token, installments, transactionAmount, descr
       payer,
       external_reference: externalReference,
       // idempotência do lado do Mercado Pago
-      notification_url: `${process.env.API_PUBLIC_URL || ''}/v1/webhooks/mercadopago`,
+      ...(notificationUrl ? { notification_url: notificationUrl } : {}),
     },
   });
 }
@@ -33,6 +57,7 @@ async function createCardPayment({ token, installments, transactionAmount, descr
  * "copia e cola" prontos para exibição no frontend.
  */
 async function createPixPayment({ transactionAmount, description, payer, externalReference }) {
+  const notificationUrl = buildNotificationUrl();
   return paymentClient.create({
     body: {
       transaction_amount: transactionAmount,
@@ -40,7 +65,7 @@ async function createPixPayment({ transactionAmount, description, payer, externa
       payment_method_id: 'pix',
       payer,
       external_reference: externalReference,
-      notification_url: `${process.env.API_PUBLIC_URL || ''}/v1/webhooks/mercadopago`,
+      ...(notificationUrl ? { notification_url: notificationUrl } : {}),
     },
   });
 }

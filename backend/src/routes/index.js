@@ -10,6 +10,7 @@ router.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date
 // exigir token, pois cart.routes rodava antes na cadeia). Ver histórico do
 // projeto / testes de integração para o caso que expôs o problema.
 router.use(require('./auth.routes'));
+router.use(require('./account.routes'));
 router.use(require('./product.routes'));
 router.use(require('./cart.routes'));
 router.use(require('./order.routes'));

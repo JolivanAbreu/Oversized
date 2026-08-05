@@ -20,4 +20,13 @@ const getOne = asyncHandler(async (req, res) => {
   res.json(await orderService.getOrderById(req.user.id, req.params.id));
 });
 
-module.exports = { create, listMine, getOne };
+const cancel = asyncHandler(async (req, res) => {
+  res.json(await orderService.cancelOwnOrder(req.user.id, req.params.id));
+});
+
+const remove = asyncHandler(async (req, res) => {
+  await orderService.deleteOwnOrder(req.user.id, req.params.id);
+  res.status(204).send();
+});
+
+module.exports = { create, listMine, getOne, cancel, remove };

@@ -10,9 +10,14 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import ConfirmEmail from './pages/ConfirmEmail';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import ResumePayment from './pages/ResumePayment';
 import Addresses from './pages/Addresses';
+import Account from './pages/Account';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -27,9 +32,14 @@ export default function App() {
           <Route path="/carrinho" element={<Cart />} />
           <Route path="/entrar" element={<Login />} />
           <Route path="/criar-conta" element={<Register />} />
+          <Route path="/esqueci-a-senha" element={<ForgotPassword />} />
+          <Route path="/redefinir-senha" element={<ResetPassword />} />
+          <Route path="/confirmar-email" element={<ConfirmEmail />} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/minha-conta" element={<ProtectedRoute><Account /></ProtectedRoute>} />
           <Route path="/minha-conta/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/minha-conta/pedidos/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+          <Route path="/minha-conta/pedidos/:id/pagamento" element={<ProtectedRoute><ResumePayment /></ProtectedRoute>} />
           <Route path="/minha-conta/enderecos" element={<ProtectedRoute><Addresses /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

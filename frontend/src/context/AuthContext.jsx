@@ -36,8 +36,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateStoredUser = useCallback((patch) => {
+    setUser((prev) => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem('bos_user', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user, setUser: updateStoredUser }}>
       {children}
     </AuthContext.Provider>
   );
