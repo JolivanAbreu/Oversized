@@ -147,6 +147,32 @@ configuráveis via `SHIPPING_UBERFLEX_PRICE`/`SHIPPING_99FLEX_PRICE` no
 `.env`) e **"Combinar com o vendedor"** (frete zero no checkout, pedido fica
 marcado para contato manual da equipe).
 
+## Avaliações, favoritos e gestão de usuários
+
+- `GET/POST /products/:id/reviews` — avaliação exige pedido **entregue** com
+  o produto (RF-37). A listagem e o detalhe de produto já retornam
+  `avgRating`/`reviewCount` agregados, sem chamada extra.
+- `GET/POST/DELETE /wishlist` — lista de favoritos do cliente.
+- `GET /admin/users`, `PUT /admin/users/:id/role`,
+  `POST /admin/users/:id/reset-password` — gestão de usuários pelo painel
+  (promover/rebaixar perfil, gerar senha temporária para quem não recebe
+  e-mail). Um admin não pode alterar o próprio perfil por essa rota.
+
+## WhatsApp para frete "combinar com o vendedor"
+
+Configure `STORE_WHATSAPP_NUMBER` no `.env` (só dígitos, com código do país
+— ex.: `5585999998888`). O número é servido publicamente em `GET
+/store-info` e consumido pela loja para montar o botão "Falar no WhatsApp".
+
+Existem dois tipos de frete sem preço fixo, diferenciados pelo campo
+`shippingContactMethod` do pedido:
+- **`store`** ("Combinar com o vendedor") — a loja entra em contato; a loja
+  mostra o botão de WhatsApp da loja e o painel mostra o botão de WhatsApp
+  do cliente.
+- **`customer_app`** (Uber Flash, 99) — apps externos de corrida; o próprio
+  cliente pede e paga a corrida no app, a loja não participa nem sabe o
+  valor. Nenhum dos dois lados mostra botão de contato — só uma instrução.
+
 ## Próximos passos sugeridos
 
 1. Testes ponta a ponta contra o sandbox real do Mercado Pago (esta suíte usa

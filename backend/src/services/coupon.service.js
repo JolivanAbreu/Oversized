@@ -54,4 +54,32 @@ async function setCouponActive(id, active) {
   return coupon;
 }
 
-module.exports = { validateCoupon, calculateDiscount, registerUsage, createCoupon, listCoupons, setCouponActive };
+async function updateCoupon(id, payload) {
+  const coupon = await Coupon.findByPk(id);
+  if (!coupon) throw ApiError.notFound('Cupom não encontrado');
+
+  const { code, discountType, discountValue, minOrderValue, validFrom, validUntil, usageLimit } = payload;
+  if (code !== undefined) coupon.code = code.toUpperCase();
+  if (discountType !== undefined) coupon.discountType = discountType;
+  if (discountValue !== undefined) coupon.discountValue = discountValue;
+  if (minOrderValue !== undefined) coupon.minOrderValue = minOrderValue;
+  if (validFrom !== undefined) coupon.validFrom = validFrom;
+  if (validUntil !== undefined) coupon.validUntil = validUntil;
+  if (usageLimit !== undefined) coupon.usageLimit = usageLimit;
+
+  await coupon.save();
+  return coupon;
+}
+
+async function deleteCoupon(id) {
+  // Seguro excluir de verdade: order.couponCode guarda só o texto do código
+  // usado (não é uma FK para coupons.id), então remover o cupom não afeta o
+  // histórico de pedidos que já o utilizaram.
+  const deleted = await Coupon.destroy({ where: { id } });
+  if (!deleted) throw ApiError.notFound('Cupom não encontrado');
+}
+
+module.exports = {
+  validateCoupon, calculateDiscount, registerUsage,
+  createCoupon, listCoupons, setCouponActive, updateCoupon, deleteCoupon,
+};

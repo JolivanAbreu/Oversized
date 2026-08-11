@@ -1,32 +1,33 @@
 const ApiError = require('../utils/apiError');
 
 /**
- * Opções de entrega da loja. Diferente de uma transportadora nacional
- * (Correios/Melhor Envio), Uberflex e 99Flex são serviços de motoboy sob
- * demanda dentro da cidade — não têm uma API pública de cotação por CEP,
- * então os valores aqui são fixos e configuráveis via variável de ambiente
- * pelo lojista. "Combinar com o vendedor" cobra frete zero no checkout e
- * marca o pedido para a equipe entrar em contato depois (RN da loja).
+ * Opções de entrega da loja. Uber Flash e 99 são apps externos de corrida —
+ * a loja não cobra nem define o valor da corrida: o cliente pede direto no
+ * app e paga o valor mostrado lá (por isso price: 0 aqui, e
+ * contactMethod: 'customer_app' avisa o frontend a mostrar essa instrução
+ * em vez de "vamos te chamar no WhatsApp"). "Combinar com o vendedor" é o
+ * caso oposto — a loja que entra em contato (contactMethod: 'store').
  */
 async function quoteShipping({ zip, items }) {
   try {
-    const uberflexPrice = Number(process.env.SHIPPING_UBERFLEX_PRICE || 15);
-    const flex99Price = Number(process.env.SHIPPING_99FLEX_PRICE || 12);
-
     return [
       {
         id: 'uberflex',
-        name: 'Uberflex (motoboy)',
-        price: uberflexPrice,
+        name: 'Uber Flash',
+        price: 0,
         estimatedDays: 0,
-        note: 'Entrega no mesmo dia, dentro da cidade',
+        note: 'Peça a coleta direto no app Uber — o valor da corrida aparece por lá.',
+        requiresArrangement: true,
+        contactMethod: 'customer_app',
       },
       {
         id: '99flex',
-        name: '99Flex (motoboy)',
-        price: flex99Price,
+        name: '99',
+        price: 0,
         estimatedDays: 0,
-        note: 'Entrega no mesmo dia, dentro da cidade',
+        note: 'Peça a coleta direto no app 99 — o valor da corrida aparece por lá.',
+        requiresArrangement: true,
+        contactMethod: 'customer_app',
       },
       {
         id: 'combinar',
@@ -35,6 +36,7 @@ async function quoteShipping({ zip, items }) {
         estimatedDays: null,
         note: 'Nossa equipe entra em contato por WhatsApp/telefone para combinar a entrega',
         requiresArrangement: true,
+        contactMethod: 'store',
       },
     ];
   } catch (err) {

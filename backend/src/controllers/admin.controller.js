@@ -4,7 +4,29 @@ const productService = require('../services/product.service');
 const orderService = require('../services/order.service');
 const couponService = require('../services/coupon.service');
 const stockService = require('../services/stock.service');
+const reportService = require('../services/report.service');
+const adminUserService = require('../services/adminUser.service');
+const categoryService = require('../services/category.service');
 const { sequelize } = require('../models');
+
+// --- Usuários ---
+
+const listUsers = asyncHandler(async (req, res) => {
+  const { search, role, page } = req.query;
+  res.json(await adminUserService.listUsers({ search, role, page }));
+});
+
+const setUserRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+  if (!role) throw ApiError.badRequest('role é obrigatório');
+  const user = await adminUserService.setUserRole(req.params.id, role, req.user.id);
+  res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+});
+
+const resetUserPassword = asyncHandler(async (req, res) => {
+  const result = await adminUserService.resetUserPassword(req.params.id);
+  res.json(result);
+});
 
 // --- Produtos ---
 
@@ -49,8 +71,8 @@ const adjustStock = asyncHandler(async (req, res) => {
 // --- Pedidos ---
 
 const listOrders = asyncHandler(async (req, res) => {
-  const { status, page } = req.query;
-  res.json(await orderService.listAllOrders({ status, page }));
+  const { status, search, page } = req.query;
+  res.json(await orderService.listAllOrders({ status, search, page }));
 });
 
 const getOrder = asyncHandler(async (req, res) => {
@@ -60,7 +82,10 @@ const getOrder = asyncHandler(async (req, res) => {
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status, trackingCode } = req.body;
   if (!status) throw ApiError.badRequest('status é obrigatório');
-  res.json(await orderService.updateOrderStatus(req.params.id, status, { trackingCode }));
+  res.json(await orderService.updateOrderStatus(req.params.id, status, {
+    trackingCode,
+    transitions: orderService.ADMIN_VALID_TRANSITIONS,
+  }));
 });
 
 // --- Cupons ---
@@ -82,6 +107,34 @@ const setCouponActive = asyncHandler(async (req, res) => {
   res.json(await couponService.setCouponActive(req.params.id, !!active));
 });
 
+const updateCoupon = asyncHandler(async (req, res) => {
+  res.json(await couponService.updateCoupon(req.params.id, req.body));
+});
+
+const deleteCoupon = asyncHandler(async (req, res) => {
+  await couponService.deleteCoupon(req.params.id);
+  res.status(204).send();
+});
+
+// --- Categorias ---
+
+const listCategories = asyncHandler(async (req, res) => {
+  res.json(await categoryService.listCategoriesWithProductCount());
+});
+
+const createCategory = asyncHandler(async (req, res) => {
+  res.status(201).json(await categoryService.createCategory(req.body));
+});
+
+const updateCategory = asyncHandler(async (req, res) => {
+  res.json(await categoryService.updateCategory(req.params.id, req.body));
+});
+
+const deleteCategory = asyncHandler(async (req, res) => {
+  await categoryService.deleteCategory(req.params.id);
+  res.status(204).send();
+});
+
 // --- Dashboard ---
 
 // --- Upload de imagens ---
@@ -95,6 +148,23 @@ const uploadImage = asyncHandler(async (req, res) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const url = `${baseUrl}/uploads/${req.file.filename}`;
   res.status(201).json({ url });
+});
+
+// --- Relatórios ---
+
+const salesReport = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  res.json(await reportService.getSalesReport({ from, to }));
+});
+
+const salesReportExport = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  const rows = await reportService.getSalesExportRows({ from, to });
+  const csv = reportService.rowsToCsv(rows);
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="relatorio-vendas-${Date.now()}.csv"`);
+  res.send(csv);
 });
 
 const dashboardMetrics = asyncHandler(async (req, res) => {
@@ -136,9 +206,12 @@ const dashboardMetrics = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  listUsers, setUserRole, resetUserPassword,
   listProducts, getProduct, createProduct, updateProduct, deactivateProduct, reactivateProduct, adjustStock,
   uploadImage,
   listOrders, getOrder, updateOrderStatus,
-  createCoupon, listCoupons, setCouponActive,
+  createCoupon, listCoupons, setCouponActive, updateCoupon, deleteCoupon,
+  listCategories, createCategory, updateCategory, deleteCategory,
+  salesReport, salesReportExport,
   dashboardMetrics,
 };

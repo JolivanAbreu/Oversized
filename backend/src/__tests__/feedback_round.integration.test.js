@@ -104,6 +104,68 @@ describe('Opções de frete (Uberflex, 99Flex, combinar)', () => {
     expect(combinar.price).toBe(0);
     expect(combinar.requiresArrangement).toBe(true);
   });
+
+  it('pedido criado com "combinar" persiste o método de frete e contactMethod=store', async () => {
+    const category = await Category.create({ name: 'Cat Combinar', slug: `cat-combinar-${uuidv4()}` });
+    const product = await Product.create({ categoryId: category.id, name: 'Produto Combinar', slug: `produto-combinar-${uuidv4()}`, basePrice: 70, active: true });
+    const variant = await ProductVariant.create({ productId: product.id, size: 'M', color: 'Preto', sku: `SKU-COMBINAR-${uuidv4()}`, stockQuantity: 10 });
+
+    const token = await registerAndLogin(`frete-combinar-${Date.now()}@teste.com`, `${Date.now()}`.slice(0, 11));
+    const addr = await request(app).post('/v1/addresses').set('Authorization', `Bearer ${token}`).send({
+      street: 'Rua Combinar', number: '1', neighborhood: 'Centro', city: 'Fortaleza', state: 'CE', zip: '60000-000',
+    });
+    await request(app).post('/v1/cart/items').set('Authorization', `Bearer ${token}`).send({ variant_id: variant.id, quantity: 1 });
+
+    const order = await request(app).post('/v1/orders').set('Authorization', `Bearer ${token}`).send({
+      address_id: addr.body.id, shipping_option_id: 'combinar',
+    });
+
+    expect(order.status).toBe(201);
+    expect(order.body.shippingMethod).toBe('combinar');
+    expect(order.body.shippingMethodName).toBe('Combinar com o vendedor');
+    expect(order.body.requiresShippingArrangement).toBe(true);
+    expect(order.body.shippingContactMethod).toBe('store');
+    expect(order.body.shippingCost).toBe('0.00');
+  });
+
+  it('pedido criado com Uber Flash tem preço zero e contactMethod=customer_app (cliente pede no app)', async () => {
+    const category = await Category.create({ name: 'Cat Uberflex', slug: `cat-uberflex-${uuidv4()}` });
+    const product = await Product.create({ categoryId: category.id, name: 'Produto Uberflex', slug: `produto-uberflex-${uuidv4()}`, basePrice: 70, active: true });
+    const variant = await ProductVariant.create({ productId: product.id, size: 'M', color: 'Preto', sku: `SKU-UBERFLEX-${uuidv4()}`, stockQuantity: 10 });
+
+    const token = await registerAndLogin(`frete-uberflex-${Date.now()}@teste.com`, `${Date.now()}`.slice(0, 11));
+    const addr = await request(app).post('/v1/addresses').set('Authorization', `Bearer ${token}`).send({
+      street: 'Rua Uberflex', number: '1', neighborhood: 'Centro', city: 'Fortaleza', state: 'CE', zip: '60000-000',
+    });
+    await request(app).post('/v1/cart/items').set('Authorization', `Bearer ${token}`).send({ variant_id: variant.id, quantity: 1 });
+
+    const order = await request(app).post('/v1/orders').set('Authorization', `Bearer ${token}`).send({
+      address_id: addr.body.id, shipping_option_id: 'uberflex',
+    });
+
+    expect(order.status).toBe(201);
+    expect(order.body.shippingMethodName).toBe('Uber Flash');
+    expect(order.body.shippingCost).toBe('0.00');
+    expect(order.body.requiresShippingArrangement).toBe(true);
+    expect(order.body.shippingContactMethod).toBe('customer_app');
+  });
+
+  it('a cotação de frete retorna "Uber Flash" (não mais "Uberflex") e nenhuma opção de app externo tem preço fixo', async () => {
+    const category = await Category.create({ name: 'Cat Cotacao', slug: `cat-cotacao-${uuidv4()}` });
+    const product = await Product.create({ categoryId: category.id, name: 'Produto Cotacao', slug: `produto-cotacao-${uuidv4()}`, basePrice: 70, active: true });
+    const variant = await ProductVariant.create({ productId: product.id, size: 'M', color: 'Preto', sku: `SKU-COTACAO-${uuidv4()}`, stockQuantity: 10 });
+
+    const token = await registerAndLogin(`frete-cotacao-${Date.now()}@teste.com`, `${Date.now()}`.slice(0, 11));
+    await request(app).post('/v1/cart/items').set('Authorization', `Bearer ${token}`).send({ variant_id: variant.id, quantity: 1 });
+
+    const res = await request(app).post('/v1/cart/shipping-quote').set('Authorization', `Bearer ${token}`).send({ zip: '60000-000' });
+    const uber = res.body.find((o) => o.id === 'uberflex');
+    const flex99 = res.body.find((o) => o.id === '99flex');
+
+    expect(uber.name).toBe('Uber Flash');
+    expect(uber.price).toBe(0);
+    expect(flex99.price).toBe(0);
+  });
 });
 
 describe('Upload de imagem', () => {

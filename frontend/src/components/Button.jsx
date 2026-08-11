@@ -6,9 +6,9 @@ export default function Button({ as: Component = 'button', variant = 'primary', 
     lg: 'px-8 py-4 text-base',
   };
   const variants = {
-    primary: 'bg-ink text-white border-2 border-ink hover:bg-tag hover:border-tag',
+    primary: 'bg-ink text-white border-2 border-ink hover:bg-tag hover:text-ink hover:border-tag',
     secondary: 'bg-transparent text-ink border-2 border-ink hover:bg-ink hover:text-white',
-    tag: 'bg-tag text-white border-2 border-ink shadow-[3px_3px_0_var(--color-ink)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px]',
+    tag: 'bg-tag text-ink border-2 border-ink shadow-[3px_3px_0_var(--color-ink)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px]',
     ghost: 'bg-transparent text-ink border-2 border-transparent hover:border-ink',
   };
 

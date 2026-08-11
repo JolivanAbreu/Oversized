@@ -14,6 +14,14 @@ const getBySlug = asyncHandler(async (req, res) => {
   res.json(product);
 });
 
+const listFeatured = asyncHandler(async (req, res) => {
+  const { slot } = req.query;
+  if (!['banner', 'destaque'].includes(slot)) {
+    throw ApiError.badRequest('slot deve ser "banner" ou "destaque"');
+  }
+  res.json(await productService.listFeaturedProducts(slot));
+});
+
 const search = asyncHandler(async (req, res) => {
   const { q } = req.query;
   if (!q) throw ApiError.badRequest('Parâmetro q é obrigatório');
@@ -43,6 +51,11 @@ const createReview = asyncHandler(async (req, res) => {
   const { Order, OrderItem, ProductVariant } = require('../models');
   const deliveredOrderWithProduct = await Order.findOne({
     where: { userId: req.user.id, status: 'entregue' },
+    // subQuery:false evita um bug conhecido do Sequelize: com include
+    // aninhado em 2 níveis (Order -> OrderItem -> ProductVariant) e um
+    // where profundo, a otimização automática de subquery do findOne gera
+    // SQL inválido (falta o JOIN de order_items na subquery gerada).
+    subQuery: false,
     include: [{
       model: OrderItem, as: 'items',
       include: [{ model: ProductVariant, as: 'variant', where: { productId } }],
@@ -61,4 +74,4 @@ const createReview = asyncHandler(async (req, res) => {
   res.status(201).json(review);
 });
 
-module.exports = { list, getBySlug, search, listCategories, listReviews, createReview };
+module.exports = { list, getBySlug, search, listCategories, listReviews, createReview, listFeatured };

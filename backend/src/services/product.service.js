@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Product, ProductVariant, ProductImage, Category, sequelize } = require('../models');
+const { Product, ProductVariant, ProductImage, Category, Review, sequelize } = require('../models');
 const ApiError = require('../utils/apiError');
 
 const PAGE_SIZE = 20;
@@ -10,6 +10,60 @@ const SORT_MAP = {
   price_desc: [['basePrice', 'DESC']],
   best_selling: [['createdAt', 'DESC']], // ligação com order_items.sum(quantity) é feita em relatórios (documento 3, seção de índices)
 };
+
+/**
+ * Busca média de avaliação e quantidade de reviews para um conjunto de
+ * produtos em uma única query agregada (evita N+1) e devolve um mapa
+ * productId -> { avgRating, reviewCount } pronto para mesclar na resposta.
+ */
+async function getRatingSummary(productIds) {
+  if (productIds.length === 0) return {};
+
+  const rows = await Review.findAll({
+    where: { productId: productIds },
+    attributes: [
+      'productId',
+      [sequelize.fn('AVG', sequelize.col('rating')), 'avgRating'],
+      [sequelize.fn('COUNT', sequelize.col('id')), 'reviewCount'],
+    ],
+    group: ['productId'],
+    raw: true,
+  });
+
+  return Object.fromEntries(rows.map((r) => [
+    r.productId,
+    { avgRating: Number(Number(r.avgRating).toFixed(1)), reviewCount: Number(r.reviewCount) },
+  ]));
+}
+
+function attachRatings(products, summary) {
+  return products.map((p) => {
+    const json = p.toJSON();
+    json.avgRating = summary[p.id]?.avgRating ?? null;
+    json.reviewCount = summary[p.id]?.reviewCount ?? 0;
+    return json;
+  });
+}
+
+/**
+ * Produtos marcados pelo admin para aparecer em destaque na loja — banner
+ * principal da home (normalmente um só) ou fileira de destaques (vários).
+ * Sempre filtra por active:true, senão um produto desativado continuaria
+ * aparecendo em destaque na vitrine.
+ */
+async function listFeaturedProducts(slot) {
+  const products = await Product.findAll({
+    where: { featuredSlot: slot, active: true },
+    include: [
+      { model: ProductVariant, as: 'variants' },
+      { model: ProductImage, as: 'images', separate: true, order: [['order', 'ASC']] },
+      { model: Category, as: 'category' },
+    ],
+    order: [['updatedAt', 'DESC']],
+  });
+  const summary = await getRatingSummary(products.map((p) => p.id));
+  return attachRatings(products, summary);
+}
 
 async function listProducts({ category, size, color, minPrice, maxPrice, sort, page = 1 }) {
   const where = { active: true };
@@ -35,7 +89,9 @@ async function listProducts({ category, size, color, minPrice, maxPrice, sort, p
     offset: (page - 1) * PAGE_SIZE,
   });
 
-  return { data: rows, page: Number(page), totalPages: Math.ceil(count / PAGE_SIZE), total: count };
+  const summary = await getRatingSummary(rows.map((r) => r.id));
+
+  return { data: attachRatings(rows, summary), page: Number(page), totalPages: Math.ceil(count / PAGE_SIZE), total: count };
 }
 
 async function getProductBySlug(slug) {
@@ -48,7 +104,12 @@ async function getProductBySlug(slug) {
     ],
   });
   if (!product) throw ApiError.notFound('Produto não encontrado');
-  return product;
+
+  const summary = await getRatingSummary([product.id]);
+  const json = product.toJSON();
+  json.avgRating = summary[product.id]?.avgRating ?? null;
+  json.reviewCount = summary[product.id]?.reviewCount ?? 0;
+  return json;
 }
 
 async function searchProducts(query) {
@@ -219,4 +280,5 @@ module.exports = {
   reactivateProduct,
   listProductsForAdmin,
   getProductForAdmin,
+  listFeaturedProducts,
 };

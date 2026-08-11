@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import { inputClass } from '../components/Field';
 import { ErrorNotice, SuccessNotice, LoadingBlock } from '../components/States';
 import { formatPrice, formatDateTime, ORDER_STATUS_LABELS, ORDER_STATUS_TONE, ORDER_NEXT_STATUSES } from '../lib/format';
+import { buildCustomerWhatsAppLink } from '../lib/whatsapp';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -70,6 +71,37 @@ export default function OrderDetail() {
             <p><span className="text-ink-soft">E-mail:</span> {order.user.email}</p>
             <p><span className="text-ink-soft">Telefone:</span> {order.user.phone || '—'}</p>
           </div>
+
+          {order.requiresShippingArrangement && order.shippingContactMethod === 'store' && (
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="text-xs text-ink-soft">
+                Este pedido escolheu <strong>frete a combinar</strong> — combine valor e prazo direto com o cliente.
+              </p>
+              {order.user.phone ? (
+                <Button
+                  as="a"
+                  href={buildCustomerWhatsAppLink(order.user.phone, order)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Contatar no WhatsApp
+                </Button>
+              ) : (
+                <p className="mt-2 text-xs text-ink-soft">Cliente sem telefone cadastrado — contate por e-mail.</p>
+              )}
+            </div>
+          )}
+
+          {order.requiresShippingArrangement && order.shippingContactMethod === 'customer_app' && (
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="text-xs text-ink-soft">
+                Este pedido escolheu <strong>{order.shippingMethodName}</strong> — o próprio cliente pede a
+                corrida e paga direto no app. Não é preciso combinar nada por aqui.
+              </p>
+            </div>
+          )}
         </section>
       )}
 
@@ -97,7 +129,7 @@ export default function OrderDetail() {
           <div className="mt-4 space-y-1 border-t border-line pt-3 font-mono text-sm">
             <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
             {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-ink-soft">Desconto</span><span>−{formatPrice(order.discount)}</span></div>}
-            <div className="flex justify-between"><span className="text-ink-soft">Frete</span><span>{formatPrice(order.shippingCost)}</span></div>
+            <div className="flex justify-between"><span className="text-ink-soft">Frete{order.shippingMethodName ? ` (${order.shippingMethodName})` : ''}</span><span>{formatPrice(order.shippingCost)}</span></div>
             <div className="flex justify-between border-t border-line pt-1 font-semibold"><span>Total</span><span>{formatPrice(order.total)}</span></div>
           </div>
         </section>

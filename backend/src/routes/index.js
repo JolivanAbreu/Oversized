@@ -2,6 +2,16 @@ const router = require('express').Router();
 
 router.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// Dados públicos da loja usados pelo frontend (ex.: número de WhatsApp para
+// o contato de "combinar frete com o vendedor") — endpoint dedicado em vez
+// de embutir no build do frontend, assim dá pra trocar o número sem rebuild.
+router.get('/store-info', (req, res) => {
+  res.json({
+    storeName: 'Dravennx',
+    whatsappNumber: process.env.STORE_WHATSAPP_NUMBER || null,
+  });
+});
+
 // Nota: cada sub-router aplica authenticate/requireRole por rota individual,
 // nunca via router.use(authenticate) sem prefixo — como os sub-routers abaixo
 // são montados em '/', um router.use() sem path intercepta TODA requisição

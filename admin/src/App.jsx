@@ -9,6 +9,10 @@ import ProductForm from './pages/ProductForm';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Coupons from './pages/Coupons';
+import Reports from './pages/Reports';
+import Users from './pages/Users';
+import MyAccount from './pages/MyAccount';
+import Categories from './pages/Categories';
 
 export default function App() {
   return (
@@ -19,9 +23,13 @@ export default function App() {
         <Route path="/produtos" element={<Products />} />
         <Route path="/produtos/novo" element={<ProtectedRoute adminOnly><ProductForm /></ProtectedRoute>} />
         <Route path="/produtos/:id" element={<ProtectedRoute adminOnly><ProductForm /></ProtectedRoute>} />
+        <Route path="/categorias" element={<ProtectedRoute adminOnly><Categories /></ProtectedRoute>} />
         <Route path="/pedidos" element={<Orders />} />
         <Route path="/pedidos/:id" element={<OrderDetail />} />
         <Route path="/cupons" element={<ProtectedRoute adminOnly><Coupons /></ProtectedRoute>} />
+        <Route path="/relatorios" element={<ProtectedRoute adminOnly><Reports /></ProtectedRoute>} />
+        <Route path="/usuarios" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+        <Route path="/minha-conta" element={<MyAccount />} />
       </Route>
     </Routes>
   );

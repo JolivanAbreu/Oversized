@@ -38,11 +38,11 @@ export const ORDER_STATUS_TONE = {
 // Order.VALID_TRANSITIONS do backend (order.service.js) para já filtrar as
 // opções do formulário antes mesmo de chamar a API.
 export const ORDER_NEXT_STATUSES = {
-  aguardando_pagamento: ['cancelado'],
-  pago: ['em_separacao', 'cancelado'],
-  em_separacao: ['enviado', 'cancelado'],
-  enviado: ['entregue'],
-  entregue: [],
+  aguardando_pagamento: ['pago', 'cancelado'],
+  pago: ['em_separacao', 'enviado', 'entregue', 'cancelado'],
+  em_separacao: ['enviado', 'entregue', 'cancelado'],
+  enviado: ['entregue', 'cancelado'],
+  entregue: ['reembolsado'],
   cancelado: ['reembolsado'],
   reembolsado: [],
 };

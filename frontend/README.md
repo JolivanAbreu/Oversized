@@ -14,6 +14,13 @@ npm run dev
 Abre em `http://localhost:5173`. É necessário o backend rodando (ver README
 do backend) com as migrations e o seed aplicados.
 
+## Botão "Painel" para admin/operador
+
+Quando um usuário com perfil admin ou operador está logado na loja, um
+botão "Painel" aparece no cabeçalho (desktop) e no menu (mobile), abrindo o
+painel administrativo em uma nova aba. A URL vem de `VITE_ADMIN_PANEL_URL`
+no `.env` — ajuste para a URL real do painel em produção.
+
 ## Pagamento por cartão
 
 O checkout usa o SDK oficial do Mercado Pago no navegador para tokenizar os

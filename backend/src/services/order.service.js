@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Order, OrderItem, Address, ProductVariant, Product, ProductImage, User, Payment, sequelize } = require('../models');
 const ApiError = require('../utils/apiError');
 const cartService = require('./cart.service');
@@ -50,6 +51,10 @@ async function createOrder(userId, { addressId, shippingOptionId, couponCode }) 
       subtotal: cart.subtotal,
       discount,
       shippingCost: shippingOption.price,
+      shippingMethod: shippingOption.id,
+      shippingMethodName: shippingOption.name,
+      requiresShippingArrangement: !!shippingOption.requiresArrangement,
+      shippingContactMethod: shippingOption.contactMethod || null,
       total,
       couponCode: coupon ? coupon.code : null,
     }, { transaction });
@@ -112,8 +117,11 @@ async function releaseOrderStock(order, { transaction } = {}) {
   }
 }
 
-function assertValidTransition(currentStatus, nextStatus) {
-  const allowed = Order.VALID_TRANSITIONS[currentStatus] || [];
+// Máquina de estados usada para ações do próprio cliente (cancelamento) e
+// como padrão de updateOrderStatus. Mais restritiva: só avança um passo por
+// vez, refletindo o fluxo natural do pedido.
+function assertValidTransition(currentStatus, nextStatus, transitions = Order.VALID_TRANSITIONS) {
+  const allowed = transitions[currentStatus] || [];
   if (!allowed.includes(nextStatus)) {
     throw ApiError.unprocessable(
       `Transição de status inválida: ${currentStatus} -> ${nextStatus}`,
@@ -122,11 +130,28 @@ function assertValidTransition(currentStatus, nextStatus) {
   }
 }
 
+// Máquina de estados usada pelo painel administrativo — mais permissiva que
+// a do cliente: a equipe da loja frequentemente pula etapas na prática (ex.:
+// despacha no mesmo dia sem passar por "em separação", ou confirma um
+// pagamento manualmente). Continua bloqueando o que não faz sentido, como
+// pular a confirmação de pagamento ou reabrir um pedido já entregue.
+const ADMIN_VALID_TRANSITIONS = {
+  aguardando_pagamento: ['pago', 'cancelado'],
+  pago: ['em_separacao', 'enviado', 'entregue', 'cancelado'],
+  em_separacao: ['enviado', 'entregue', 'cancelado'],
+  enviado: ['entregue', 'cancelado'],
+  entregue: ['reembolsado'],
+  cancelado: ['reembolsado'],
+  reembolsado: [],
+};
+
 /**
  * Atualiza o status do pedido validando a máquina de estados (RF-26/RF-27),
  * disparando e-mail ao cliente (RF-28) e liberando estoque em cancelamentos.
+ * `transitions` permite trocar a máquina de estados aplicada (ver
+ * ADMIN_VALID_TRANSITIONS, usada pelo painel administrativo).
  */
-async function updateOrderStatus(orderId, nextStatus, { trackingCode } = {}) {
+async function updateOrderStatus(orderId, nextStatus, { trackingCode, transitions } = {}) {
   return sequelize.transaction(async (transaction) => {
     const order = await Order.findByPk(orderId, {
       include: [{ model: OrderItem, as: 'items' }],
@@ -134,7 +159,7 @@ async function updateOrderStatus(orderId, nextStatus, { trackingCode } = {}) {
     });
     if (!order) throw ApiError.notFound('Pedido não encontrado');
 
-    assertValidTransition(order.status, nextStatus);
+    assertValidTransition(order.status, nextStatus, transitions);
 
     if (nextStatus === 'enviado' && !trackingCode) {
       throw ApiError.badRequest('Código de rastreio é obrigatório para marcar como enviado');
@@ -163,9 +188,13 @@ async function updateOrderStatus(orderId, nextStatus, { trackingCode } = {}) {
       console.error('[email] falha ao notificar mudança de status do pedido', err.message);
     });
 
-    // Cancelamento de pedido já pago aciona estorno automático (RN-06). Requerido
-    // dentro da função para evitar dependência circular entre os services.
-    if (nextStatus === 'cancelado' && wasPaid) {
+
+    // Estorno automático: dispara tanto no cancelamento de um pedido já pago
+    // quanto na transição direta para "reembolsado" (ex.: devolução após
+    // entrega, sem passar por "cancelado"). Requerido dentro da função para
+    // evitar dependência circular entre os services.
+    const shouldRefund = nextStatus === 'reembolsado' || (nextStatus === 'cancelado' && wasPaid);
+    if (shouldRefund) {
       const paymentService = require('./payment.service');
       await paymentService.refundOrderPayment(order.id).catch((err) => {
         // eslint-disable-next-line no-console
@@ -177,9 +206,30 @@ async function updateOrderStatus(orderId, nextStatus, { trackingCode } = {}) {
   });
 }
 
-async function listAllOrders({ status, page = 1 } = {}) {
+async function listAllOrders({ status, search, page = 1 } = {}) {
   const where = {};
   if (status) where.status = status;
+
+  if (search) {
+    // Busca por número do pedido OU nome/e-mail do cliente. Como envolve
+    // duas tabelas, resolve os IDs de usuário que combinam primeiro, depois
+    // monta um único OR — mais simples e previsível do que tentar um OR
+    // through de um include aninhado no Sequelize.
+    const matchingUsers = await User.findAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { email: { [Op.iLike]: `%${search}%` } },
+        ],
+      },
+      attributes: ['id'],
+    });
+    where[Op.or] = [
+      { orderNumber: { [Op.iLike]: `%${search}%` } },
+      { userId: { [Op.in]: matchingUsers.map((u) => u.id) } },
+    ];
+  }
+
   const PAGE_SIZE = 30;
 
   const { rows, count } = await Order.findAndCountAll({
@@ -244,4 +294,5 @@ module.exports = {
   assertValidTransition,
   cancelOwnOrder,
   deleteOwnOrder,
+  ADMIN_VALID_TRANSITIONS,
 };

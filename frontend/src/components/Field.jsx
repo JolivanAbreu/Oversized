@@ -10,4 +10,4 @@ export default function Field({ label, error, children, hint }) {
 }
 
 export const inputClass =
-  'w-full border-2 border-ink bg-white px-4 py-2.5 text-sm outline-none focus:border-tag';
+  'w-full border-2 border-ink bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-tag';

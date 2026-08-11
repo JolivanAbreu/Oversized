@@ -9,6 +9,8 @@ module.exports = (sequelize, DataTypes) => {
     fabric: { type: DataTypes.STRING(100) },
     careInstructions: { type: DataTypes.TEXT, field: 'care_instructions' },
     basePrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: 'base_price' },
+    featuredSlot: { type: DataTypes.STRING(20), field: 'featured_slot' },
+    badgeLabel: { type: DataTypes.STRING(30), field: 'badge_label' },
     active: { type: DataTypes.BOOLEAN, defaultValue: true },
   }, {
     tableName: 'products',

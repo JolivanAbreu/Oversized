@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import StatusPill from '../components/StatusPill';
 import { LoadingBlock, EmptyState } from '../components/States';
+import { inputClass } from '../components/Field';
 import { formatPrice } from '../lib/format';
 
 export default function Products() {
@@ -41,7 +42,7 @@ export default function Products() {
 
       <form onSubmit={handleSearchSubmit} className="mt-6 flex gap-2">
         <input
-          className="w-full max-w-sm rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-ink"
+          className={`${inputClass} max-w-sm`}
           placeholder="Buscar por nome ou slug..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -83,7 +84,7 @@ export default function Products() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-medium">{product.name}</span>
+                      <Link to={`/produtos/${product.id}`} className="font-medium hover:text-tag">{product.name}</Link>
                     </td>
                     <td className="px-4 py-3 text-ink-soft">{product.category?.name || '—'}</td>
                     <td className="px-4 py-3 font-mono">{formatPrice(product.basePrice)}</td>

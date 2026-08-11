@@ -10,6 +10,7 @@ export function CartProvider({ children }) {
   const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState(emptyCart);
   const [loading, setLoading] = useState(false);
+  const [coupon, setCoupon] = useState(null); // { code, discount } — persiste da sacola até o checkout
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) {
@@ -47,7 +48,7 @@ export function CartProvider({ children }) {
   const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, loading, itemCount, refresh, addItem, updateItem, removeItem }}>
+    <CartContext.Provider value={{ cart, loading, itemCount, coupon, setCoupon, refresh, addItem, updateItem, removeItem }}>
       {children}
     </CartContext.Provider>
   );

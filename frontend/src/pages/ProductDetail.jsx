@@ -3,9 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import ProductMedia from '../components/ProductMedia';
+import { useAuthModal } from '../context/AuthModalContext';
+import ProductGallery from '../components/ProductGallery';
 import Tag from '../components/Tag';
 import Button from '../components/Button';
+import FavoriteButton from '../components/FavoriteButton';
+import { StarDisplay } from '../components/StarRating';
+import ReviewsSection from '../components/ReviewsSection';
 import { LoadingBlock, ErrorNotice } from '../components/States';
 import { formatPrice } from '../lib/format';
 
@@ -13,6 +17,7 @@ export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { openLoginModal } = useAuthModal();
   const { addItem } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -45,7 +50,7 @@ export default function ProductDetail() {
       return;
     }
     if (!isAuthenticated) {
-      navigate('/entrar', { state: { redirectTo: `/produtos/${slug}` } });
+      openLoginModal(`/produtos/${slug}`);
       return;
     }
     setAdding(true);
@@ -63,15 +68,24 @@ export default function ProductDetail() {
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="relative border-2 border-ink bg-canvas-alt">
-          <ProductMedia product={product} color={selectedColor} className="h-[32rem] w-full" />
+        <div className="relative">
+          <ProductGallery product={product} color={selectedColor} className="h-[32rem] w-full" />
           <div className="absolute left-4 top-4">
             <Tag variant="tag">{formatPrice(price)}</Tag>
           </div>
         </div>
 
         <div>
-          <h1 className="font-display text-5xl leading-none">{product.name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="font-display text-5xl leading-none">{product.name}</h1>
+            <FavoriteButton productId={product.id} className="shrink-0" />
+          </div>
+          {product.reviewCount > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              <StarDisplay value={product.avgRating} size="md" />
+              <span className="font-mono text-xs text-ink-soft">{product.avgRating} · {product.reviewCount} avaliaç{product.reviewCount === 1 ? 'ão' : 'ões'}</span>
+            </div>
+          )}
           <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">{product.description}</p>
 
           <div className="mt-8 space-y-6">
@@ -145,6 +159,8 @@ export default function ProductDetail() {
           </dl>
         </div>
       </div>
+
+      <ReviewsSection productId={product.id} avgRating={product.avgRating} reviewCount={product.reviewCount} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ jest.mock('../integrations/mercadopago');
 const mercadopago = require('../integrations/mercadopago');
 
 const app = require('../app');
-const { sequelize, Category, Product, ProductVariant, Order, Payment } = require('../models');
+const { sequelize, Category, Product, ProductVariant, Order, Payment, User } = require('../models');
 
 let variantId;
 
@@ -163,6 +163,53 @@ describe('Cancelamento e exclusão de pedido pelo cliente', () => {
 
     const res = await request(app).post(`/v1/orders/${order.id}/cancel`).set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
+    expect(mercadopago.refundPayment).toHaveBeenCalled();
+  });
+
+  it('admin confirma pagamento manualmente (aguardando_pagamento -> pago)', async () => {
+    const token = await registerAndLogin(`confirma-manual-${Date.now()}@teste.com`);
+    const order = await createOrder(token);
+
+    const adminEmail = `admin-confirma-${Date.now()}@teste.com`;
+    await registerAndLogin(adminEmail);
+    await User.update({ role: 'admin' }, { where: { email: adminEmail } });
+    const adminLogin = await request(app).post('/v1/login').send({ email: adminEmail, password: 'senha1234' });
+
+    const res = await request(app)
+      .put(`/v1/admin/orders/${order.id}/status`)
+      .set('Authorization', `Bearer ${adminLogin.body.access_token}`)
+      .send({ status: 'pago' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('pago');
+  });
+
+  it('admin reembolsa pedido entregue diretamente, sem passar por cancelado, e o estorno é acionado', async () => {
+    mercadopago.createPixPayment.mockResolvedValue({
+      id: Date.now(),
+      status: 'pending',
+      point_of_interaction: { transaction_data: { qr_code_base64: 'x', qr_code: 'y' } },
+    });
+    mercadopago.refundPayment.mockResolvedValue({ status: 'refunded' });
+
+    const token = await registerAndLogin(`entrega-reembolso-${Date.now()}@teste.com`);
+    const order = await createOrder(token);
+    await request(app).post('/v1/payments/pix').set('Authorization', `Bearer ${token}`).send({ order_id: order.id });
+    await Payment.update({ status: 'approved' }, { where: { orderId: order.id } });
+    await Order.update({ status: 'entregue' }, { where: { id: order.id } });
+
+    const adminEmail = `admin-entrega-reembolso-${Date.now()}@teste.com`;
+    await registerAndLogin(adminEmail);
+    await User.update({ role: 'admin' }, { where: { email: adminEmail } });
+    const adminLogin = await request(app).post('/v1/login').send({ email: adminEmail, password: 'senha1234' });
+
+    const res = await request(app)
+      .put(`/v1/admin/orders/${order.id}/status`)
+      .set('Authorization', `Bearer ${adminLogin.body.access_token}`)
+      .send({ status: 'reembolsado' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('reembolsado');
     expect(mercadopago.refundPayment).toHaveBeenCalled();
   });
 });

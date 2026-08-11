@@ -1,25 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Paleta oficial da marca Dravennx — escala de cinza neutra (Coolors:
-     F8F9FA → 212529). Sem matiz nenhuma: hierarquia e estado (sucesso/erro/
-     atenção) são comunicados por contraste de tom, não por cor — abordagem
-     editorial/monocromática, coerente com o tom "dark/electric" da marca. */
-  --color-canvas: #F8F9FA;
-  --color-canvas-alt: #E9ECEF;
-  --color-line: #CED4DA;
-  --color-ink: #212529;
-  --color-ink-soft: #6C757D;
-  --color-tag: #212529;
-  --color-tag-dark: #000000;
-  --color-lime: #E9ECEF;
-  --color-danger: #343A40;
+  /* Reformulação completa a pedido do cliente — substitui inteiramente a
+     identidade anterior (bege/laranja/Anton) pela linguagem visual do novo
+     mockup: fundo cinza claro, cartões brancos, navbar em grafite quase
+     preto, verde vibrante como único acento de ação (não vermelho/laranja),
+     tipografia do sistema em vez de fonte display própria. */
+  --color-canvas: #F4F4F6;
+  --color-canvas-alt: #FFFFFF;
+  --color-line: #E2E2E6;
+  --color-ink: #1A1A1A;
+  --color-ink-soft: #666666;
+  --color-tag: #00FD77;
+  --color-tag-dark: #00C765;
+  --color-lime: #E3FCEF;
+  --color-danger: #FF2B43;
+  --color-danger-bg: #FF2B43;
   --color-white: #FFFFFF;
 
-  --font-display: 'Anton', 'Arial Narrow', sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, monospace;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Courier New', ui-monospace, monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* O antigo font-display vinha de uma fonte (Anton) que já era preta por
+   natureza; a fonte do sistema precisa do peso forçado aqui pra manter o
+   mesmo impacto visual nos títulos, sem precisar editar cada página. */
+.font-display {
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
 
 * {
@@ -39,7 +48,7 @@ body {
 
 ::selection {
   background: var(--color-tag);
-  color: var(--color-white);
+  color: var(--color-ink);
 }
 
 :focus-visible {
@@ -57,6 +66,7 @@ body {
   align-items: center;
   gap: 0.35rem;
   background: var(--color-white);
+  color: var(--color-ink);
   border: 1.5px solid var(--color-ink);
   padding: 0.3rem 0.7rem 0.3rem 1.15rem;
   font-family: var(--font-mono);
@@ -76,7 +86,7 @@ body {
   height: 0.3rem;
   border-radius: 999px;
   border: 1.5px solid var(--color-ink);
-  background: var(--color-canvas);
+  background: var(--color-canvas-alt);
 }
 
 .tag--tilt-right {
@@ -85,13 +95,15 @@ body {
 
 .tag--tag {
   background: var(--color-tag);
-  color: var(--color-white);
+  color: var(--color-ink);
   border-color: var(--color-ink);
 }
 
 .tag--lime {
   background: var(--color-lime);
   color: var(--color-ink);
+  border-color: var(--color-ink);
+  box-shadow: 2px 2px 0 var(--color-ink);
 }
 
 .hairline {
@@ -111,4 +123,71 @@ body {
   .animate-marquee {
     animation: none;
   }
+}
+
+/* Navbar: sublinhado neon crescendo do centro no hover — replica exata do
+   comportamento do mockup de referência (linha verde de baixo pra cima). */
+.nav-hover-underline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-hover-underline::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-tag);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.nav-hover-underline:hover {
+  color: var(--color-tag);
+  transform: translateY(-1px);
+}
+
+.nav-hover-underline:hover::after {
+  width: 100%;
+}
+
+.nav-logo {
+  transition: transform 0.2s ease;
+}
+
+.nav-logo:hover {
+  transform: translateX(-50%) scale(1.03);
+}
+
+/* Item da coluna de atalhos que aparece sob o ícone da sacola */
+.sidebar-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-shortcut:hover {
+  color: var(--color-tag);
+  background: rgba(255, 255, 255, 0.08);
 }

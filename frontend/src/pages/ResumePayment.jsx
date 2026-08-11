@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { useCart } from '../context/CartContext';
 import PaymentPanel from '../components/PaymentPanel';
 import Tag from '../components/Tag';
+import ShippingArrangementNotice from '../components/ShippingArrangementNotice';
 import { LoadingBlock, EmptyState } from '../components/States';
 import { formatPrice } from '../lib/format';
 
@@ -54,6 +55,8 @@ export default function ResumePayment() {
       <div className="mt-4">
         <Tag variant="lime">pedido {order.orderNumber} · total {formatPrice(order.total)}</Tag>
       </div>
+
+      <ShippingArrangementNotice order={order} />
 
       <div className="mt-8">
         <PaymentPanel

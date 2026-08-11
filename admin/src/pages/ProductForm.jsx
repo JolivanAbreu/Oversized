@@ -70,7 +70,7 @@ export default function ProductForm() {
 
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
-    categoryId: '', name: '', slug: '', description: '', fabric: '', careInstructions: '', basePrice: '', active: true,
+    categoryId: '', name: '', slug: '', description: '', fabric: '', careInstructions: '', basePrice: '', active: true, featuredSlot: '', badgeLabel: '',
   });
   const [variants, setVariants] = useState([emptyVariant()]);
   const [images, setImages] = useState([]);
@@ -96,6 +96,8 @@ export default function ProductForm() {
         careInstructions: data.careInstructions || '',
         basePrice: data.basePrice,
         active: data.active,
+        featuredSlot: data.featuredSlot || '',
+        badgeLabel: data.badgeLabel || '',
       });
       setVariants(data.variants.length ? data.variants.map((v) => ({ ...v, tempId: v.id })) : [emptyVariant()]);
       setImages(data.images.map((img) => ({ ...img, tempId: img.id })));
@@ -123,17 +125,24 @@ export default function ProductForm() {
   }
 
   async function handleFileUpload(e) {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // permite selecionar o mesmo arquivo de novo depois
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // permite selecionar os mesmos arquivos de novo depois
+    if (files.length === 0) return;
 
     setUploadError('');
     setUploadingImage(true);
     try {
-      const result = await uploadFile('/admin/uploads', file);
-      setImages((prev) => [...prev, { tempId: nextTempId(), url: result.url }]);
+      // Envia todas as imagens selecionadas, uma de cada vez — Promise.all
+      // dispararia todas simultaneamente e sobrecarregaria o endpoint (e
+      // dificultaria mostrar qual arquivo falhou, se algum falhar).
+      const uploaded = [];
+      for (const file of files) {
+        const result = await uploadFile('/admin/uploads', file);
+        uploaded.push({ tempId: nextTempId(), url: result.url });
+      }
+      setImages((prev) => [...prev, ...uploaded]);
     } catch (err) {
-      setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar a imagem.');
+      setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar uma ou mais imagens.');
     } finally {
       setUploadingImage(false);
     }
@@ -161,6 +170,8 @@ export default function ProductForm() {
     const payload = {
       ...form,
       basePrice: Number(form.basePrice),
+      featuredSlot: form.featuredSlot || null,
+      badgeLabel: form.badgeLabel || null,
       variants: variants.map((v) => ({
         ...(isTemp(v.tempId) ? {} : { id: v.id }),
         size: v.size,
@@ -235,6 +246,16 @@ export default function ProductForm() {
               <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
               Visível na loja (ativo)
             </label>
+            <Field label="Aparecer em destaque" hint="Onde essa peça aparece na home da loja">
+              <select className={inputClass} value={form.featuredSlot} onChange={(e) => setForm({ ...form, featuredSlot: e.target.value })}>
+                <option value="">Nenhum (fica só na vitrine normal)</option>
+                <option value="banner">Banner principal da home</option>
+                <option value="destaque">Fileira de destaques da home</option>
+              </select>
+            </Field>
+            <Field label="Rótulo de destaque no card (opcional)" hint='Texto livre, ex.: "LANÇAMENTO" ou "BESTSELLER" — não é desconto calculado'>
+              <input className={inputClass} maxLength={30} placeholder="Ex.: LANÇAMENTO" value={form.badgeLabel} onChange={(e) => setForm({ ...form, badgeLabel: e.target.value.toUpperCase() })} />
+            </Field>
           </div>
         </section>
 
@@ -282,6 +303,7 @@ export default function ProductForm() {
                 </span>
                 <input
                   type="file"
+                  multiple
                   accept="image/png,image/jpeg,image/webp,image/gif"
                   className="hidden"
                   disabled={uploadingImage}

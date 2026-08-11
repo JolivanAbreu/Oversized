@@ -28,4 +28,8 @@ describe('assertValidTransition', () => {
   it('permite cancelado -> reembolsado', () => {
     expect(() => assertValidTransition('cancelado', 'reembolsado')).not.toThrow();
   });
+
+  it('permite entregue -> reembolsado (devolução pós-entrega)', () => {
+    expect(() => assertValidTransition('entregue', 'reembolsado')).not.toThrow();
+  });
 });

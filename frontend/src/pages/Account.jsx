@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Field, { inputClass } from '../components/Field';
@@ -6,9 +7,15 @@ import Button from '../components/Button';
 import { ErrorNotice, LoadingBlock } from '../components/States';
 import { maskCPF, maskPhone } from '../lib/masks';
 
+function initials(name = '') {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || '') + (parts[parts.length - 1]?.[0] || '')).toUpperCase();
+}
+
 export default function Account() {
-  const { setUser } = useAuth();
+  const { setUser, logout } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [address, setAddress] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '' });
   const [profileError, setProfileError] = useState('');
   const [profileSaved, setProfileSaved] = useState(false);
@@ -29,6 +36,7 @@ export default function Account() {
       setProfile(data);
       setForm({ name: data.name, phone: maskPhone(data.phone || '') });
     });
+    api.get('/addresses').then((list) => setAddress(list[0] || null)).catch(() => setAddress(null));
   }, []);
 
   async function handleSaveProfile(e) {
@@ -107,72 +115,114 @@ export default function Account() {
     }
   }
 
-  if (!profile) return <div className="mx-auto max-w-2xl px-5 py-16 sm:px-8"><LoadingBlock label="Carregando conta" /></div>;
+  if (!profile) return <div className="mx-auto max-w-4xl px-5 py-16 sm:px-8"><LoadingBlock label="Carregando conta" /></div>;
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-12 sm:px-8">
-      <h1 className="font-display text-5xl">Minha conta</h1>
+    <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-5 rounded-lg border border-line bg-canvas-alt p-5">
+        <div className="flex items-center gap-5">
+          <div className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-ink text-2xl font-black text-white">
+            {initials(profile.name)}
+          </div>
+          <div>
+            <h1 className="text-lg font-black uppercase">{profile.name}</h1>
+            <p className="mt-1 text-xs text-ink-soft">{profile.email}{profile.phone ? ` · ${maskPhone(profile.phone)}` : ''}</p>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          className="flex items-center gap-1.5 rounded-md bg-danger-bg px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white hover:opacity-90"
+        >
+          Sair da conta
+        </button>
+      </div>
 
-      <section className="mt-10 border-2 border-ink p-6">
-        <h2 className="font-display text-2xl">Dados pessoais</h2>
-        <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
-          <Field label="Nome completo">
-            <input required className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </Field>
-          <Field label="Telefone">
-            <input inputMode="numeric" placeholder="(00) 00000-0000" className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })} />
-          </Field>
-          <Field label="E-mail" hint="Use a seção abaixo para trocar seu e-mail.">
-            <input disabled className={`${inputClass} cursor-not-allowed opacity-60`} value={profile.email} readOnly />
-          </Field>
-          <Field label="CPF" hint="Documento fixo, não pode ser alterado.">
-            <input disabled className={`${inputClass} cursor-not-allowed opacity-60`} value={maskCPF(profile.cpf || '')} readOnly />
-          </Field>
-          <ErrorNotice message={profileError} />
-          {profileSaved && <p className="font-mono text-xs text-tag">Dados atualizados ✓</p>}
-          <Button type="submit" variant="tag" disabled={savingProfile}>
-            {savingProfile ? 'Salvando...' : 'Salvar alterações'}
-          </Button>
-        </form>
-      </section>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[2fr_1fr]">
+        <section className="rounded-lg border border-line p-5">
+          <h2 className="border-b-2 border-ink pb-3 text-xs font-black uppercase tracking-wide">Dados pessoais</h2>
+          <form onSubmit={handleSaveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Nome completo">
+                <input required className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Telefone / WhatsApp">
+              <input inputMode="numeric" placeholder="(00) 00000-0000" className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })} />
+            </Field>
+            <Field label="CPF" hint="Documento fixo">
+              <input disabled className={`${inputClass} cursor-not-allowed opacity-60`} value={maskCPF(profile.cpf || '')} readOnly />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="E-mail" hint="Use a seção ao lado para trocar seu e-mail">
+                <input disabled className={`${inputClass} cursor-not-allowed opacity-60`} value={profile.email} readOnly />
+              </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <ErrorNotice message={profileError} />
+              {profileSaved && <p className="text-xs font-bold text-tag-dark">Dados atualizados ✓</p>}
+              <Button type="submit" disabled={savingProfile} className="mt-2">
+                {savingProfile ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
+            </div>
+          </form>
+        </section>
 
-      <section className="mt-8 border-2 border-ink p-6">
-        <h2 className="font-display text-2xl">Trocar e-mail</h2>
-        <p className="mt-1 text-sm text-ink-soft">E-mail atual: {profile.email}</p>
-        <form onSubmit={handleChangeEmail} className="mt-4 space-y-4">
-          <Field label="Novo e-mail">
-            <input type="email" required className={inputClass} value={emailForm.newEmail} onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })} />
-          </Field>
-          <Field label="Senha atual" hint="Confirme sua senha para trocar o e-mail">
-            <input type="password" required className={inputClass} value={emailForm.currentPassword} onChange={(e) => setEmailForm({ ...emailForm, currentPassword: e.target.value })} />
-          </Field>
-          <ErrorNotice message={emailError} />
-          {emailSaved && <p className="font-mono text-xs text-tag">E-mail atualizado ✓</p>}
-          <Button type="submit" variant="secondary" disabled={savingEmail}>
-            {savingEmail ? 'Salvando...' : 'Trocar e-mail'}
-          </Button>
-        </form>
-      </section>
+        <div className="flex flex-col gap-5">
+          <section className="rounded-lg border border-line p-4">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Endereço principal</h2>
+            {address ? (
+              <p className="mt-3 text-xs leading-relaxed text-ink-soft">
+                <strong className="text-ink">{address.street}, {address.number}</strong>
+                {address.complement && ` — ${address.complement}`}<br />
+                {address.neighborhood} — {address.city}/{address.state}<br />
+                CEP: {address.zip}
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-ink-soft">Nenhum endereço cadastrado ainda.</p>
+            )}
+            <Button as={Link} to="/minha-conta/enderecos" variant="secondary" size="sm" className="mt-3 w-full justify-center">
+              {address ? 'Gerenciar endereços' : 'Cadastrar endereço'}
+            </Button>
+          </section>
 
-      <section className="mt-8 border-2 border-ink p-6">
-        <h2 className="font-display text-2xl">Trocar senha</h2>
-        <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
-          <Field label="Senha atual">
-            <input type="password" required className={inputClass} value={passwordForm.currentPassword} onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} />
-          </Field>
-          <Field label="Nova senha" hint="Mínimo de 8 caracteres">
-            <input type="password" required className={inputClass} value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} />
-          </Field>
-          <Field label="Confirmar nova senha">
-            <input type="password" required className={inputClass} value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} />
-          </Field>
-          <ErrorNotice message={passwordError} />
-          {passwordSaved && <p className="font-mono text-xs text-tag">Senha atualizada ✓</p>}
-          <Button type="submit" variant="secondary" disabled={savingPassword}>
-            {savingPassword ? 'Salvando...' : 'Trocar senha'}
-          </Button>
-        </form>
-      </section>
+          <section className="rounded-lg border border-line p-4">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Trocar e-mail</h2>
+            <form onSubmit={handleChangeEmail} className="mt-3 space-y-3">
+              <Field label="Novo e-mail">
+                <input type="email" required className={inputClass} value={emailForm.newEmail} onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })} />
+              </Field>
+              <Field label="Senha atual">
+                <input type="password" required className={inputClass} value={emailForm.currentPassword} onChange={(e) => setEmailForm({ ...emailForm, currentPassword: e.target.value })} />
+              </Field>
+              <ErrorNotice message={emailError} />
+              {emailSaved && <p className="text-xs font-bold text-tag-dark">E-mail atualizado ✓</p>}
+              <Button type="submit" variant="secondary" size="sm" disabled={savingEmail} className="w-full justify-center">
+                {savingEmail ? 'Salvando...' : 'Trocar e-mail'}
+              </Button>
+            </form>
+          </section>
+
+          <section className="rounded-lg border border-line p-4">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Segurança</h2>
+            <form onSubmit={handleChangePassword} className="mt-3 space-y-3">
+              <Field label="Senha atual">
+                <input type="password" required placeholder="••••••••" className={inputClass} value={passwordForm.currentPassword} onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} />
+              </Field>
+              <Field label="Nova senha" hint="Mínimo de 8 caracteres">
+                <input type="password" required className={inputClass} value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} />
+              </Field>
+              <Field label="Confirmar nova senha">
+                <input type="password" required className={inputClass} value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} />
+              </Field>
+              <ErrorNotice message={passwordError} />
+              {passwordSaved && <p className="text-xs font-bold text-tag-dark">Senha atualizada ✓</p>}
+              <Button type="submit" variant="secondary" size="sm" disabled={savingPassword} className="w-full justify-center">
+                {savingPassword ? 'Salvando...' : 'Atualizar senha'}
+              </Button>
+            </form>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

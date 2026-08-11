@@ -7,6 +7,12 @@ const { upload } = require('../middlewares/upload');
 // Aplica autenticação + verificação de perfil em cada rota individualmente
 // (nunca via router.use sem prefixo — ver nota em routes/index.js).
 
+// Usuários — restrito a administrador (mudar perfil e redefinir senha são
+// ações sensíveis; não abrimos para operador)
+router.get('/admin/users', authenticate, requireRole('admin'), controller.listUsers);
+router.put('/admin/users/:id/role', authenticate, requireRole('admin'), controller.setUserRole);
+router.post('/admin/users/:id/reset-password', authenticate, requireRole('admin'), controller.resetUserPassword);
+
 // Produtos e estoque — leitura liberada para admin e operador (operador
 // precisa listar/ver produtos para ajustar estoque); escrita restrita a admin
 router.get('/admin/products', authenticate, requireRole('admin', 'operator'), controller.listProducts);
@@ -29,9 +35,22 @@ router.put('/admin/orders/:id/status', authenticate, requireRole('admin', 'opera
 // Cupons — administrador
 router.post('/admin/coupons', authenticate, requireRole('admin'), controller.createCoupon);
 router.get('/admin/coupons', authenticate, requireRole('admin'), controller.listCoupons);
+router.put('/admin/coupons/:id', authenticate, requireRole('admin'), controller.updateCoupon);
 router.put('/admin/coupons/:id/active', authenticate, requireRole('admin'), controller.setCouponActive);
+router.delete('/admin/coupons/:id', authenticate, requireRole('admin'), controller.deleteCoupon);
+
+// Categorias — leitura liberada para admin e operador (operador precisa ver
+// categorias ao consultar produtos); escrita restrita a admin
+router.get('/admin/categories', authenticate, requireRole('admin', 'operator'), controller.listCategories);
+router.post('/admin/categories', authenticate, requireRole('admin'), controller.createCategory);
+router.put('/admin/categories/:id', authenticate, requireRole('admin'), controller.updateCategory);
+router.delete('/admin/categories/:id', authenticate, requireRole('admin'), controller.deleteCategory);
 
 // Dashboard — restrito a administrador (dados financeiros, RNF-07)
 router.get('/admin/dashboard/metrics', authenticate, requireRole('admin'), controller.dashboardMetrics);
+
+// Relatórios de vendas — restrito a administrador
+router.get('/admin/reports/sales', authenticate, requireRole('admin'), controller.salesReport);
+router.get('/admin/reports/sales/export', authenticate, requireRole('admin'), controller.salesReportExport);
 
 module.exports = router;

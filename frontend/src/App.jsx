@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import LoginModal from './components/LoginModal';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -17,6 +18,7 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import ResumePayment from './pages/ResumePayment';
 import Addresses from './pages/Addresses';
+import Favorites from './pages/Favorites';
 import Account from './pages/Account';
 import NotFound from './pages/NotFound';
 
@@ -24,6 +26,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <LoginModal />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -41,6 +44,7 @@ export default function App() {
           <Route path="/minha-conta/pedidos/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
           <Route path="/minha-conta/pedidos/:id/pagamento" element={<ProtectedRoute><ResumePayment /></ProtectedRoute>} />
           <Route path="/minha-conta/enderecos" element={<ProtectedRoute><Addresses /></ProtectedRoute>} />
+          <Route path="/minha-conta/favoritos" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

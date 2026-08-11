@@ -14,7 +14,7 @@ import PaymentPanel from '../components/PaymentPanel';
 const STEPS = ['Endereço', 'Frete', 'Pagamento'];
 
 export default function Checkout() {
-  const { cart, refresh } = useCart();
+  const { cart, refresh, coupon } = useCart();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
@@ -27,8 +27,9 @@ export default function Checkout() {
   const [shippingOptions, setShippingOptions] = useState(null);
   const [selectedShipping, setSelectedShipping] = useState(null);
 
-  const [couponCode, setCouponCode] = useState('');
-  const [couponResult, setCouponResult] = useState(null);
+  // Cupom aplicado na sacola já vem pré-preenchido aqui, sem precisar digitar de novo.
+  const [couponCode, setCouponCode] = useState(coupon?.code || '');
+  const [couponResult, setCouponResult] = useState(coupon ? { discount: coupon.discount } : null);
   const [couponError, setCouponError] = useState('');
 
   const [order, setOrder] = useState(null);
@@ -206,7 +207,13 @@ export default function Checkout() {
                         </span>
                       </span>
                     </span>
-                    <span className="font-mono text-sm">{option.price > 0 ? formatPrice(option.price) : 'a combinar'}</span>
+                    <span className="font-mono text-sm">
+                      {option.contactMethod === 'customer_app'
+                        ? 'ver no app'
+                        : option.price > 0
+                          ? formatPrice(option.price)
+                          : 'a combinar'}
+                    </span>
                   </label>
                 ))}
               </div>
