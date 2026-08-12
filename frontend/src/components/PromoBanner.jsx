@@ -1,40 +1,53 @@
-import Tag from './Tag';
+import { useEffect, useState } from 'react';
+import { ShoppingBag, Shirt } from 'lucide-react';
+import { api } from '../api/client';
+import { focalPointToCss } from '../lib/imageFocal';
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1600&q=80';
 
 /**
- * Banner de campanha promocional — estrutura pronta pra uma promoção do
- * tipo "compre X e ganhe Y", com ícones dos brindes disponíveis. O texto
- * abaixo é só um placeholder: como isso é uma decisão de negócio (quantas
- * peças, quais brindes, por quanto tempo), ajuste as props quando definir
- * a promoção real — ou me diga os detalhes que eu já deixo fixo.
+ * Banner de campanha configurável pelo admin (Painel → Banner) — imagem e
+ * textos vêm de GET /promo-banner. Enquanto o admin não configurar nada, o
+ * backend já devolve uma copy padrão sensata (ver promoBanner.service.js),
+ * então essa seção nunca fica vazia.
  */
-export default function PromoBanner({
-  eyebrow = 'compre 3',
-  title = 'blusas',
-  subtitle = 'e escolha o brinde',
-  gifts = [
-    { label: 'Bolsa transversal' },
-    { label: 'Boné' },
-    { label: 'Camiseta extra' },
-  ],
-}) {
-  return (
-    <section className="relative overflow-hidden border-b-2 border-ink bg-canvas-alt text-white">
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-        <Tag variant="lime">promoção</Tag>
-        <p className="font-display mt-4 text-2xl uppercase tracking-wide sm:text-3xl">{eyebrow}</p>
-        <p className="font-display text-6xl uppercase leading-[0.85] tracking-tight sm:text-8xl">{title}</p>
-        <p className="font-display mt-1 text-2xl uppercase tracking-wide sm:text-3xl">{subtitle}</p>
+export default function PromoBanner() {
+  const [banner, setBanner] = useState(null);
 
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          {gifts.map((gift) => (
-            <div key={gift.label} className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-white/10 font-mono text-[10px] uppercase leading-tight" title={gift.label}>
-              {gift.label.slice(0, 2)}
-            </div>
-          ))}
-          <p className="max-w-[220px] font-mono text-xs text-white/70">
-            Escolha o brinde na hora de fechar o pedido.
-          </p>
+  useEffect(() => {
+    api.get('/promo-banner', { auth: false }).then(setBanner).catch(() => setBanner(null));
+  }, []);
+
+  if (!banner) return null;
+
+  const { eyebrow, title, subtitle, description, imageUrl, imageFocalPoint } = banner;
+
+  return (
+    <section
+      className="relative overflow-hidden rounded-lg bg-cover"
+      style={{ backgroundImage: `url(${imageUrl || FALLBACK_IMAGE})`, backgroundPosition: focalPointToCss(imageFocalPoint) }}
+    >
+      <div className="flex flex-col gap-5 bg-[rgba(18,20,24,0.75)] px-6 py-9 text-white sm:px-8 sm:py-11">
+        <div className="max-w-xl">
+          {eyebrow && <p className="text-2xl font-black uppercase leading-none tracking-wide sm:text-3xl">{eyebrow}</p>}
+          {title && (
+            <p className="font-display mt-1 text-5xl font-black uppercase leading-[0.9] tracking-tight text-[#f7eedd] sm:text-7xl">
+              {title}
+            </p>
+          )}
+          {subtitle && <p className="mt-2 text-lg font-black uppercase tracking-wide sm:text-2xl">{subtitle}</p>}
         </div>
+
+        {description && (
+          <div className="flex flex-wrap items-center gap-3">
+            {[ShoppingBag, Shirt, Shirt, Shirt].map((Icon, i) => (
+              <div key={i} className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                <Icon size={22} strokeWidth={2} />
+              </div>
+            ))}
+            <p className="max-w-[220px] font-mono text-[11px] leading-tight text-white/85">{description}</p>
+          </div>
+        )}
       </div>
     </section>
   );

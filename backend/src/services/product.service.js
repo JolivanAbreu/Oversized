@@ -187,6 +187,9 @@ async function createProduct(payload) {
       fabric: payload.fabric,
       careInstructions: payload.careInstructions,
       basePrice: payload.basePrice,
+      featuredSlot: payload.featuredSlot || null,
+      badgeLabel: payload.badgeLabel || null,
+      imageFocalPoint: payload.imageFocalPoint || 'center',
       active: payload.active ?? true,
     }, { transaction });
 

@@ -13,6 +13,9 @@ import Reports from './pages/Reports';
 import Users from './pages/Users';
 import MyAccount from './pages/MyAccount';
 import Categories from './pages/Categories';
+import PromoBannerSettings from './pages/PromoBannerSettings';
+import FeaturedManagement from './pages/FeaturedManagement';
+import InstagramGallery from './pages/InstagramGallery';
 
 export default function App() {
   return (
@@ -24,6 +27,9 @@ export default function App() {
         <Route path="/produtos/novo" element={<ProtectedRoute adminOnly><ProductForm /></ProtectedRoute>} />
         <Route path="/produtos/:id" element={<ProtectedRoute adminOnly><ProductForm /></ProtectedRoute>} />
         <Route path="/categorias" element={<ProtectedRoute adminOnly><Categories /></ProtectedRoute>} />
+        <Route path="/banner-promocional" element={<ProtectedRoute adminOnly><PromoBannerSettings /></ProtectedRoute>} />
+        <Route path="/destaques" element={<ProtectedRoute adminOnly><FeaturedManagement /></ProtectedRoute>} />
+        <Route path="/instagram" element={<ProtectedRoute adminOnly><InstagramGallery /></ProtectedRoute>} />
         <Route path="/pedidos" element={<Orders />} />
         <Route path="/pedidos/:id" element={<OrderDetail />} />
         <Route path="/cupons" element={<ProtectedRoute adminOnly><Coupons /></ProtectedRoute>} />

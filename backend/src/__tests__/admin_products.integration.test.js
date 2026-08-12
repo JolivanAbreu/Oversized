@@ -45,6 +45,45 @@ describe('CRUD administrativo de produtos', () => {
     expect(res.body.images).toHaveLength(1);
   });
 
+  it('cria produto já com featuredSlot, badgeLabel e imageFocalPoint definidos (antes só dava pra setar isso num update separado)', async () => {
+    const res = await request(app).post('/v1/admin/products').set('Authorization', `Bearer ${adminToken}`).send({
+      categoryId,
+      name: 'Produto Destaque na Criação',
+      slug: `produto-destaque-criacao-${uuidv4()}`,
+      basePrice: 99.9,
+      featuredSlot: 'destaque',
+      badgeLabel: 'NOVO',
+      imageFocalPoint: 'top',
+      variants: [{ size: 'M', color: 'Preto', sku: `SKU-DEST-${uuidv4()}`, stockQuantity: 5 }],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.featuredSlot).toBe('destaque');
+    expect(res.body.badgeLabel).toBe('NOVO');
+    expect(res.body.imageFocalPoint).toBe('top');
+  });
+
+  it('produto novo tem imageFocalPoint "center" por padrão quando não informado', async () => {
+    const res = await request(app).post('/v1/admin/products').set('Authorization', `Bearer ${adminToken}`).send({
+      categoryId, name: 'Produto Sem Enquadramento', slug: `produto-sem-enquadramento-${uuidv4()}`, basePrice: 60,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.imageFocalPoint).toBe('center');
+  });
+
+  it('admin edita o enquadramento da imagem de um produto existente', async () => {
+    const created = await request(app).post('/v1/admin/products').set('Authorization', `Bearer ${adminToken}`).send({
+      categoryId, name: 'Produto Editar Enquadramento', slug: `produto-editar-enquadramento-${uuidv4()}`, basePrice: 60,
+    });
+
+    const updated = await request(app).put(`/v1/admin/products/${created.body.id}`).set('Authorization', `Bearer ${adminToken}`).send({
+      imageFocalPoint: 'bottom',
+    });
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.imageFocalPoint).toBe('bottom');
+  });
+
   it('operador não pode criar produto (403)', async () => {
     const res = await request(app).post('/v1/admin/products').set('Authorization', `Bearer ${operatorToken}`).send({
       categoryId, name: 'X', slug: `x-${uuidv4()}`, basePrice: 10,

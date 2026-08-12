@@ -73,18 +73,18 @@ export default function LoginModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[250] flex items-center justify-center bg-ink/70 p-5 backdrop-blur-sm"
+      className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto bg-black/75 p-5 py-10 backdrop-blur-[4px] sm:items-center sm:py-5"
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-sm rounded-lg bg-canvas-alt p-6 shadow-2xl sm:p-8"
+        className="my-auto w-full max-w-[450px] rounded-lg bg-white p-6 shadow-[0_10px_25px_rgba(0,0,0,0.3)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex border-b-2 border-line">
           <button
             onClick={() => switchTab('login')}
             className={`flex-1 border-b-2 py-2.5 text-xs font-black uppercase tracking-wide transition-colors ${
-              tab === 'login' ? '-mb-0.5 border-tag text-ink' : 'border-transparent text-ink-soft hover:text-ink'
+              tab === 'login' ? '-mb-0.5 border-tag text-[#111111]' : 'border-transparent text-[#777777] hover:text-[#111111]'
             }`}
           >
             Entrar
@@ -92,10 +92,10 @@ export default function LoginModal() {
           <button
             onClick={() => switchTab('register')}
             className={`flex-1 border-b-2 py-2.5 text-xs font-black uppercase tracking-wide transition-colors ${
-              tab === 'register' ? '-mb-0.5 border-tag text-ink' : 'border-transparent text-ink-soft hover:text-ink'
+              tab === 'register' ? '-mb-0.5 border-tag text-[#111111]' : 'border-transparent text-[#777777] hover:text-[#111111]'
             }`}
           >
-            Criar conta
+            Criar Conta
           </button>
         </div>
 

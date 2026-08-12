@@ -110,27 +110,17 @@ body {
   border-color: var(--color-line);
 }
 
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-.animate-marquee {
-  animation: marquee 22s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
-    animation: none;
-  }
-}
-
 /* Navbar: sublinhado neon crescendo do centro no hover — replica exata do
    comportamento do mockup de referência (linha verde de baixo pra cima). */
 .nav-hover-underline {
+  /* display não é definido aqui de propósito — antes era "inline-flex"
+     direto no CSS (fora de qualquer @layer do Tailwind), e CSS sem camada
+     SEMPRE vence sobre @layer utilities, não importa a ordem ou
+     especificidade. Isso fazia o "hidden"/"lg:inline-flex" do Tailwind
+     nunca funcionar de verdade nos links que deveriam sumir no celular
+     (Meus pedidos, Painel, Entrar/Sair ficavam sempre visíveis). Agora
+     cada uso no JSX define o próprio display via classe do Tailwind. */
   position: relative;
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
   padding: 6px 4px;
   font-size: 11px;
@@ -163,13 +153,12 @@ body {
   width: 100%;
 }
 
-.nav-logo {
-  transition: transform 0.2s ease;
-}
-
-.nav-logo:hover {
-  transform: translateX(-50%) scale(1.03);
-}
+/* Removido o hack anterior de .nav-logo:hover que sobrescrevia o transform
+   inteiro com um valor bruto — isso brigava com a classe utilitária
+   -translate-x-1/2 do Tailwind (usada pra centralizar a logo) e causava o
+   logo "pulando" de lugar ao passar o mouse. O hover agora é feito só com
+   utilitários do Tailwind (hover:scale-*), que compõem translate + scale
+   corretamente na mesma variável de transform. */
 
 /* Item da coluna de atalhos que aparece sob o ícone da sacola */
 .sidebar-shortcut {

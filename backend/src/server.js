@@ -24,6 +24,23 @@ function warnAboutMissingMercadoPagoCredentials() {
   }
 }
 
+// Sem STORE_WHATSAPP_NUMBER configurado, o ícone flutuante de WhatsApp e o
+// aviso de "combinar frete" somem silenciosamente em toda a loja — o
+// comportamento em si está correto (melhor esconder do que mostrar um botão
+// quebrado), mas sem esse aviso o motivo fica invisível pra quem não sabe
+// que precisa preencher essa variável.
+function warnAboutMissingWhatsAppNumber() {
+  if (!process.env.STORE_WHATSAPP_NUMBER) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '\n[aviso] STORE_WHATSAPP_NUMBER não está configurado no .env.\n' +
+      'O ícone flutuante de WhatsApp e o aviso de "combinar frete com o vendedor" vão ficar ' +
+      'invisíveis na loja até você preencher essa variável com o número da loja (só dígitos, ' +
+      'com código do país — ex.: 5585999998888) e reiniciar o servidor.\n'
+    );
+  }
+}
+
 async function start() {
   try {
     await sequelize.authenticate();
@@ -31,6 +48,7 @@ async function start() {
     console.log('[db] conexão com o banco de dados estabelecida');
 
     warnAboutMissingMercadoPagoCredentials();
+    warnAboutMissingWhatsAppNumber();
     scheduleExpireReservationsJob();
 
     app.listen(PORT, () => {

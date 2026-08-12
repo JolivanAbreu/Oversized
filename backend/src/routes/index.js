@@ -1,4 +1,7 @@
 const router = require('express').Router();
+const asyncHandler = require('../utils/asyncHandler');
+const promoBannerService = require('../services/promoBanner.service');
+const instagramPostService = require('../services/instagramPost.service');
 
 router.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -11,6 +14,18 @@ router.get('/store-info', (req, res) => {
     whatsappNumber: process.env.STORE_WHATSAPP_NUMBER || null,
   });
 });
+
+// Banner promocional configurável pelo admin (imagem + textos) — exibido no
+// topo da home.
+router.get('/promo-banner', asyncHandler(async (req, res) => {
+  res.json(await promoBannerService.getPromoBanner());
+}));
+
+// Galeria curada do Instagram (posts reais, adicionados manualmente pelo
+// admin — ver nota de arquitetura no README do backend).
+router.get('/instagram-posts', asyncHandler(async (req, res) => {
+  res.json(await instagramPostService.listActivePosts());
+}));
 
 // Nota: cada sub-router aplica authenticate/requireRole por rota individual,
 // nunca via router.use(authenticate) sem prefixo — como os sub-routers abaixo

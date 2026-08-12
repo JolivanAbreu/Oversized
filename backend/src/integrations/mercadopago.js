@@ -8,6 +8,15 @@ const client = new MercadoPagoConfig({
 
 const paymentClient = new Payment(client);
 
+// Mesmo valor de placeholder que vem no .env.example — se o token em uso
+// ainda for esse (ou estiver vazio, ou claramente não preenchido), sabemos
+// de cara que ninguém configurou credenciais reais de sandbox ainda, sem
+// precisar nem tentar a chamada.
+function hasValidCredentials() {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+  return !!token && !/^TEST-x+$/i.test(token) && token !== 'TEST-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+}
+
 /**
  * Monta a notification_url apenas quando há uma URL pública válida
  * configurada. Em ambiente local (localhost/127.0.0.1) o Mercado Pago nunca
@@ -108,6 +117,7 @@ function isValidWebhookSignature({ xSignature, xRequestId, dataId }) {
 }
 
 module.exports = {
+  hasValidCredentials,
   createCardPayment,
   createPixPayment,
   getPayment,

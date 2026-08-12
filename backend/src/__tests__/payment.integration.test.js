@@ -14,6 +14,13 @@ function uniquePaymentId() {
 jest.mock('../integrations/mercadopago');
 const mercadopago = require('../integrations/mercadopago');
 
+// O módulo mockado zera hasValidCredentials() para undefined por padrão —
+// sem isso, o pre-flight check de credenciais (payment.service.js) barraria
+// toda chamada antes mesmo de chegar em createPixPayment/createCardPayment
+// mockados. Os testes de "credenciais ausentes" mais abaixo sobrescrevem
+// isso pontualmente com mockReturnValueOnce(false).
+mercadopago.hasValidCredentials.mockReturnValue(true);
+
 const app = require('../app');
 const { sequelize, Category, Product, ProductVariant, Order, Payment } = require('../models');
 
@@ -157,6 +164,20 @@ describe('Fluxo de pagamento com Pix', () => {
 
     const stillPending = await Order.findByPk(order.id);
     expect(stillPending.status).toBe('aguardando_pagamento');
+  });
+
+  it('quando as credenciais do Mercado Pago não estão configuradas, falha rápido com uma dica clara (sem tentar a chamada de rede)', async () => {
+    mercadopago.hasValidCredentials.mockReturnValueOnce(false);
+
+    const { token } = await registerAndLogin(`pix-sem-credencial-${Date.now()}@teste.com`);
+    const order = await createOrderWithItem(token);
+
+    const res = await request(app).post('/v1/payments/pix').set('Authorization', `Bearer ${token}`).send({ order_id: order.id });
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('payment_provider_unavailable');
+    // createPixPayment nunca deveria ter sido chamado — o pre-flight barrou antes
+    expect(mercadopago.createPixPayment).not.toHaveBeenCalled();
   });
 });
 

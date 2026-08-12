@@ -7,6 +7,8 @@ const stockService = require('../services/stock.service');
 const reportService = require('../services/report.service');
 const adminUserService = require('../services/adminUser.service');
 const categoryService = require('../services/category.service');
+const promoBannerService = require('../services/promoBanner.service');
+const instagramPostService = require('../services/instagramPost.service');
 const { sequelize } = require('../models');
 
 // --- Usuários ---
@@ -135,6 +137,35 @@ const deleteCategory = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
+// --- Banner promocional (home) ---
+
+const getPromoBanner = asyncHandler(async (req, res) => {
+  res.json(await promoBannerService.getPromoBanner());
+});
+
+const updatePromoBanner = asyncHandler(async (req, res) => {
+  res.json(await promoBannerService.upsertPromoBanner(req.body));
+});
+
+// --- Galeria do Instagram ---
+
+const listInstagramPosts = asyncHandler(async (req, res) => {
+  res.json(await instagramPostService.listAllPosts());
+});
+
+const createInstagramPost = asyncHandler(async (req, res) => {
+  res.status(201).json(await instagramPostService.createPost(req.body));
+});
+
+const updateInstagramPost = asyncHandler(async (req, res) => {
+  res.json(await instagramPostService.updatePost(req.params.id, req.body));
+});
+
+const deleteInstagramPost = asyncHandler(async (req, res) => {
+  await instagramPostService.deletePost(req.params.id);
+  res.status(204).send();
+});
+
 // --- Dashboard ---
 
 // --- Upload de imagens ---
@@ -212,6 +243,8 @@ module.exports = {
   listOrders, getOrder, updateOrderStatus,
   createCoupon, listCoupons, setCouponActive, updateCoupon, deleteCoupon,
   listCategories, createCategory, updateCategory, deleteCategory,
+  getPromoBanner, updatePromoBanner,
+  listInstagramPosts, createInstagramPost, updateInstagramPost, deleteInstagramPost,
   salesReport, salesReportExport,
   dashboardMetrics,
 };

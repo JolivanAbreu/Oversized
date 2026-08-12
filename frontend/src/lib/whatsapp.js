@@ -39,6 +39,15 @@ export function buildShippingWhatsAppLink(whatsappNumber, order) {
 }
 
 /**
+ * Link genérico "falar com a loja" — usado pelo ícone flutuante que fica
+ * disponível em qualquer página, sem depender de um pedido específico.
+ */
+export function buildGeneralWhatsAppLink(whatsappNumber) {
+  const text = encodeURIComponent('Olá! Vim pelo site da Dravennx e queria tirar uma dúvida.');
+  return `https://wa.me/${whatsappNumber}?text=${text}`;
+}
+
+/**
  * Monta a URL do wa.me para o ADMIN entrar em contato com o CLIENTE sobre o
  * frete de um pedido específico — usa o telefone do cliente, não da loja.
  */

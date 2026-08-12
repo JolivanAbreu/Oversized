@@ -173,6 +173,46 @@ Existem dois tipos de frete sem preço fixo, diferenciados pelo campo
   cliente pede e paga a corrida no app, a loja não participa nem sabe o
   valor. Nenhum dos dois lados mostra botão de contato — só uma instrução.
 
+## Banner promocional configurável (home)
+
+`GET /promo-banner` (público) e `GET/PUT /admin/promo-banner` (leitura para
+admin/operador, escrita só para admin). É um registro "singleton" — só
+existe uma linha ativa por vez; salvar de novo edita a mesma linha, nunca
+cria um banner duplicado. Enquanto o admin nunca configurou nada, o
+endpoint público já devolve um texto padrão (`isDefault: true`), então a
+seção nunca aparece vazia na loja. A imagem é enviada pelo mesmo endpoint
+genérico de upload (`POST /admin/uploads`) já usado pelas fotos de produto.
+
+## Pagamento retornando "Não foi possível processar" (502)
+
+Se **todo** pagamento (Pix ou cartão) falhar com
+`payment_provider_unavailable`, o motivo quase sempre é: `.env` ainda com o
+`MERCADOPAGO_ACCESS_TOKEN` de exemplo, não uma credencial real de sandbox.
+O sistema já detecta isso antes de tentar a chamada de rede (resposta
+imediata, sem esperar timeout) e deixa bem claro no log do servidor. Fora de
+produção, a própria resposta da API já vem com um campo `hint` explicando.
+Para corrigir: gere um token de teste em
+https://www.mercadopago.com.br/developers/panel, coloque em
+`MERCADOPAGO_ACCESS_TOKEN` no `.env` e reinicie o servidor.
+
+## Galeria curada do Instagram
+
+`GET /instagram-posts` (público, até 6 posts ativos) e
+`GET/POST/PUT/DELETE /admin/instagram-posts` (leitura para admin/operador,
+escrita só para admin). É uma curadoria manual — o admin cola o link real
+de um post do Instagram + a foto, pelo painel — não uma sincronização
+automática via API do Meta.
+
+Por quê não é automático: sincronizar de verdade com o Instagram exige a
+Graph API do Meta, o que significa conta Business/Creator vinculada a uma
+Página do Facebook, um app registrado no Meta for Developers, e um token de
+acesso de longa duração que precisa ser renovado periodicamente (a Meta já
+descontinuou uma API dessas antes — a Basic Display API, em dezembro de
+2024). A curadoria manual evita essa dependência externa e mantém o
+conteúdo 100% real, só que atualizado à mão. `InstagramSection.jsx` no
+frontend prioriza os posts curados e cai de volta pras fotos mais recentes
+do catálogo se o admin ainda não tiver adicionado nenhum.
+
 ## Próximos passos sugeridos
 
 1. Testes ponta a ponta contra o sandbox real do Mercado Pago (esta suíte usa

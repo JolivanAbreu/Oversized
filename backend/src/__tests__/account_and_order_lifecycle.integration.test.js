@@ -3,6 +3,10 @@ const { v4: uuidv4 } = require('uuid');
 
 jest.mock('../integrations/mercadopago');
 const mercadopago = require('../integrations/mercadopago');
+// Sem isso, o pre-flight de credenciais em payment.service.js barraria o
+// reembolso mockado antes mesmo de chamar refundPayment (ver mesma nota em
+// payment.integration.test.js).
+mercadopago.hasValidCredentials.mockReturnValue(true);
 
 const app = require('../app');
 const { sequelize, Category, Product, ProductVariant, Order, Payment, User } = require('../models');

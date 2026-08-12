@@ -19,6 +19,28 @@ async function assertOrderPayable(order) {
  * traduzidas para um 502 com uma mensagem segura e acionável.
  */
 async function callMercadoPago(fn) {
+  // Checagem prévia: se as credenciais nem parecem reais, nem vale a pena
+  // tentar a chamada de rede (evita 2-8s de timeout inútil) — e o motivo
+  // fica cristalino no log, em vez de aparecer só como "resposta inválida
+  // da API" (o que MP retorna quando o token é lixo: uma página de erro
+  // HTML em vez de JSON, uma mensagem enganosa de se debugar).
+  if (!mercadopago.hasValidCredentials()) {
+    // eslint-disable-next-line no-console
+    console.error(
+      '[mercadopago] MERCADOPAGO_ACCESS_TOKEN não configurado (ou ainda é o valor de exemplo do .env.example). ' +
+      'Pagamentos por Pix/cartão vão continuar falhando até você colocar uma credencial de sandbox real — ' +
+      'gere uma em https://www.mercadopago.com.br/developers/panel e reinicie o servidor depois de editar o .env.'
+    );
+    throw new ApiError(
+      502,
+      'payment_provider_unavailable',
+      'Não foi possível processar o pagamento no momento. Tente novamente em instantes.',
+      process.env.NODE_ENV !== 'production'
+        ? { hint: 'MERCADOPAGO_ACCESS_TOKEN não está configurado no .env do backend — isso é esperado em ambiente de teste sem credenciais de sandbox reais.' }
+        : undefined
+    );
+  }
+
   try {
     return await fn();
   } catch (err) {

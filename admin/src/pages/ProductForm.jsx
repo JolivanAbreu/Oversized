@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError, uploadFile } from '../api/client';
 import Field, { inputClass } from '../components/Field';
 import Button from '../components/Button';
+import ImageCropModal from '../components/ImageCropModal';
 import { ErrorNotice, LoadingBlock } from '../components/States';
 
 const SIZES = ['P', 'M', 'G', 'GG', 'XG'];
@@ -70,7 +71,7 @@ export default function ProductForm() {
 
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
-    categoryId: '', name: '', slug: '', description: '', fabric: '', careInstructions: '', basePrice: '', active: true, featuredSlot: '', badgeLabel: '',
+    categoryId: '', name: '', slug: '', description: '', fabric: '', careInstructions: '', basePrice: '', active: true, featuredSlot: '', badgeLabel: '', imageFocalPoint: 'center',
   });
   const [variants, setVariants] = useState([emptyVariant()]);
   const [images, setImages] = useState([]);
@@ -79,6 +80,21 @@ export default function ProductForm() {
   const [error, setError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [cropQueue, setCropQueue] = useState([]); // File[] aguardando recorte, um de cada vez
+  const [cropQueueTotal, setCropQueueTotal] = useState(0); // tamanho do lote original, pra mostrar "1 de 3"
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+
+  // Gera uma URL temporária pro arquivo no topo da fila de recorte, e
+  // libera a anterior da memória quando troca ou quando a fila esvazia.
+  useEffect(() => {
+    if (cropQueue.length === 0) {
+      setCropImageSrc(null);
+      return;
+    }
+    const url = URL.createObjectURL(cropQueue[0]);
+    setCropImageSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [cropQueue]);
 
   useEffect(() => {
     api.get('/categories', { auth: false }).then(setCategories);
@@ -96,7 +112,7 @@ export default function ProductForm() {
         careInstructions: data.careInstructions || '',
         basePrice: data.basePrice,
         active: data.active,
-        featuredSlot: data.featuredSlot || '',
+        featuredSlot: data.featuredSlot || '', imageFocalPoint: data.imageFocalPoint || 'center',
         badgeLabel: data.badgeLabel || '',
       });
       setVariants(data.variants.length ? data.variants.map((v) => ({ ...v, tempId: v.id })) : [emptyVariant()]);
@@ -130,22 +146,33 @@ export default function ProductForm() {
     if (files.length === 0) return;
 
     setUploadError('');
+    // Cada foto passa pelo recorte individualmente (é uma interação manual
+    // — arrastar/zoom — não dá pra automatizar em lote). A fila processa
+    // uma de cada vez; cancelar uma não trava as próximas da lista.
+    setCropQueue(files);
+    setCropQueueTotal(files.length);
+  }
+
+  async function uploadCroppedFile(file) {
     setUploadingImage(true);
+    setUploadError('');
     try {
-      // Envia todas as imagens selecionadas, uma de cada vez — Promise.all
-      // dispararia todas simultaneamente e sobrecarregaria o endpoint (e
-      // dificultaria mostrar qual arquivo falhou, se algum falhar).
-      const uploaded = [];
-      for (const file of files) {
-        const result = await uploadFile('/admin/uploads', file);
-        uploaded.push({ tempId: nextTempId(), url: result.url });
-      }
-      setImages((prev) => [...prev, ...uploaded]);
+      const result = await uploadFile('/admin/uploads', file);
+      setImages((prev) => [...prev, { tempId: nextTempId(), url: result.url }]);
     } catch (err) {
-      setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar uma ou mais imagens.');
+      setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar a imagem.');
     } finally {
       setUploadingImage(false);
     }
+  }
+
+  async function handleCropConfirm(croppedFile) {
+    await uploadCroppedFile(croppedFile);
+    setCropQueue((prev) => prev.slice(1));
+  }
+
+  function handleCropCancel() {
+    setCropQueue((prev) => prev.slice(1));
   }
 
   async function handleSubmit(e) {
@@ -256,6 +283,13 @@ export default function ProductForm() {
             <Field label="Rótulo de destaque no card (opcional)" hint='Texto livre, ex.: "LANÇAMENTO" ou "BESTSELLER" — não é desconto calculado'>
               <input className={inputClass} maxLength={30} placeholder="Ex.: LANÇAMENTO" value={form.badgeLabel} onChange={(e) => setForm({ ...form, badgeLabel: e.target.value.toUpperCase() })} />
             </Field>
+            <Field label="Enquadramento da foto" hint="Se a foto ficar cortada no card/banner, ajuste qual parte fica visível">
+              <select className={inputClass} value={form.imageFocalPoint} onChange={(e) => setForm({ ...form, imageFocalPoint: e.target.value })}>
+                <option value="top">Topo</option>
+                <option value="center">Centro</option>
+                <option value="bottom">Base</option>
+              </select>
+            </Field>
           </div>
         </section>
 
@@ -337,6 +371,17 @@ export default function ProductForm() {
           <Button type="button" variant="ghost" onClick={() => navigate('/produtos')}>Cancelar</Button>
         </div>
       </form>
+
+      {cropImageSrc && (
+        <ImageCropModal
+          imageSrc={cropImageSrc}
+          aspect={3 / 4}
+          queuePosition={cropQueueTotal - cropQueue.length + 1}
+          queueTotal={cropQueueTotal}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 }

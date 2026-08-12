@@ -15,13 +15,15 @@ global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 global.cancelAnimationFrame = (id) => clearTimeout(id);
 
 // import.meta.env não existe fora do Vite: injeta manualmente
-import.meta.env = { VITE_API_BASE_URL: 'http://localhost:3000/v1', VITE_MERCADOPAGO_PUBLIC_KEY: '' };
+import.meta.env = { VITE_API_BASE_URL: 'http://localhost:3000/v1', VITE_MERCADOPAGO_PUBLIC_KEY: '', VITE_ADMIN_PANEL_URL: 'http://localhost:5174' };
 
 const React = await import('react');
 const { createRoot } = await import('react-dom/client');
 const { MemoryRouter } = await import('react-router-dom');
 const { AuthProvider } = await import('./src/context/AuthContext.jsx');
 const { CartProvider } = await import('./src/context/CartContext.jsx');
+const { WishlistProvider } = await import('./src/context/WishlistContext.jsx');
+const { AuthModalProvider } = await import('./src/context/AuthModalContext.jsx');
 const { default: App } = await import('./src/App.jsx');
 
 const errors = [];
@@ -44,7 +46,7 @@ async function renderRoute(path, label) {
     React.createElement(
       MemoryRouter,
       { initialEntries: [path] },
-      React.createElement(AuthProvider, null, React.createElement(CartProvider, null, React.createElement(App)))
+      React.createElement(AuthProvider, null, React.createElement(CartProvider, null, React.createElement(WishlistProvider, null, React.createElement(AuthModalProvider, null, React.createElement(App)))))
     )
   );
 
@@ -122,7 +124,7 @@ console.log('\nendereço criado:', addressRes.status);
 const orderRes = await fetch('http://localhost:3000/v1/orders', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${loginData.access_token}` },
-  body: JSON.stringify({ address_id: address.id, shipping_option_id: 'standard' }),
+  body: JSON.stringify({ address_id: address.id, shipping_option_id: 'combinar' }),
 });
 const order = await orderRes.json();
 console.log('pedido criado:', orderRes.status, order.orderNumber);

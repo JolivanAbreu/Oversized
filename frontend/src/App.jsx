@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -27,6 +28,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <LoginModal />
+      <FloatingWhatsApp />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />

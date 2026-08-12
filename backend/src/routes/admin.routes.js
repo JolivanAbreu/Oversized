@@ -46,6 +46,18 @@ router.post('/admin/categories', authenticate, requireRole('admin'), controller.
 router.put('/admin/categories/:id', authenticate, requireRole('admin'), controller.updateCategory);
 router.delete('/admin/categories/:id', authenticate, requireRole('admin'), controller.deleteCategory);
 
+// Banner promocional da home — leitura liberada pra admin/operador, escrita
+// só pra admin
+router.get('/admin/promo-banner', authenticate, requireRole('admin', 'operator'), controller.getPromoBanner);
+router.put('/admin/promo-banner', authenticate, requireRole('admin'), controller.updatePromoBanner);
+
+// Galeria do Instagram — leitura liberada pra admin/operador, escrita só
+// pra admin
+router.get('/admin/instagram-posts', authenticate, requireRole('admin', 'operator'), controller.listInstagramPosts);
+router.post('/admin/instagram-posts', authenticate, requireRole('admin'), controller.createInstagramPost);
+router.put('/admin/instagram-posts/:id', authenticate, requireRole('admin'), controller.updateInstagramPost);
+router.delete('/admin/instagram-posts/:id', authenticate, requireRole('admin'), controller.deleteInstagramPost);
+
 // Dashboard — restrito a administrador (dados financeiros, RNF-07)
 router.get('/admin/dashboard/metrics', authenticate, requireRole('admin'), controller.dashboardMetrics);
 

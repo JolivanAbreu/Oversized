@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import GarmentArt from './GarmentArt';
+import { focalPointToCss } from '../lib/imageFocal';
 
 export default function ProductGallery({ product, color, className = '' }) {
   const images = product?.images || [];
@@ -8,6 +9,7 @@ export default function ProductGallery({ product, color, className = '' }) {
 
   const hasRealImages = images.length > 0;
   const active = images[activeIndex];
+  const objectPosition = focalPointToCss(product?.imageFocalPoint);
 
   return (
     <div>
@@ -16,6 +18,7 @@ export default function ProductGallery({ product, color, className = '' }) {
           <img
             src={active.url}
             alt={`${product.name} — foto ${activeIndex + 1}`}
+            style={{ objectPosition }}
             className="h-full w-full object-cover"
             onError={() => setBroken((prev) => ({ ...prev, [activeIndex]: true }))}
           />

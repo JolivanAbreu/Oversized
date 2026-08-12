@@ -18,7 +18,14 @@ const UNIQUE_FIELD_MESSAGES = {
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({ error: err.code, message: err.message });
+    // `details` só é preenchido por erros explicitamente marcados como
+    // seguros para debug (ex.: aviso de credencial de sandbox ausente) — e
+    // mesmo assim, quem gera o erro já decide não incluir isso em produção.
+    return res.status(err.statusCode).json({
+      error: err.code,
+      message: err.message,
+      ...(err.details ? err.details : {}),
+    });
   }
 
   if (err.name === 'SequelizeUniqueConstraintError') {

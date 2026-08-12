@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
+import { TrendingUp, Clock, CalendarDays } from 'lucide-react';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { LoadingBlock } from '../components/States';
 import { formatPrice, formatDate } from '../lib/format';
 
-function KpiCard({ label, value }) {
+function KpiCard({ label, value, icon: Icon }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
-      <p className="text-xs uppercase tracking-wide text-ink-soft">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
+    <div className="flex items-start gap-3.5 rounded-lg border border-line bg-white p-5">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-canvas-alt text-ink">
+        <Icon className="h-4.5 w-4.5" strokeWidth={2} />
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wide text-ink-soft">{label}</p>
+        <p className="mt-1 text-2xl font-semibold">{value}</p>
+      </div>
     </div>
   );
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState(null);
 
   useEffect(() => {
@@ -26,11 +34,12 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <p className="mt-1 text-sm text-ink-soft">Olá, {user?.name?.split(' ')[0]} — aqui está o resumo da loja.</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <KpiCard label="Ticket médio" value={formatPrice(metrics.average_ticket)} />
-        <KpiCard label="Pedidos pagos aguardando separação" value={metrics.pending_orders} />
-        <KpiCard label="Dias com vendas (30d)" value={metrics.sales_by_day.length} />
+        <KpiCard label="Ticket médio" value={formatPrice(metrics.average_ticket)} icon={TrendingUp} />
+        <KpiCard label="Pedidos pagos aguardando separação" value={metrics.pending_orders} icon={Clock} />
+        <KpiCard label="Dias com vendas (30d)" value={metrics.sales_by_day.length} icon={CalendarDays} />
       </div>
 
       <section className="mt-6 rounded-lg border border-line bg-white p-6">

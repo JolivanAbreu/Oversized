@@ -23,9 +23,11 @@ export default function FavoriteButton({ productId, className = '' }) {
       onClick={handleClick}
       aria-label={active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       aria-pressed={active}
-      className={`flex h-9 w-9 items-center justify-center border-2 border-ink bg-white text-lg transition-colors hover:border-tag ${className}`}
+      className={`flex items-center justify-center border-[1.5px] text-lg transition-colors ${
+        active ? 'border-danger bg-danger text-white' : 'border-[#111111] bg-white text-[#111111] hover:border-tag'
+      } ${className || 'h-9 w-9 border-2'}`}
     >
-      <span className={active ? 'text-danger' : 'text-ink'}>{active ? '★' : '☆'}</span>
+      <span>{active ? '★' : '☆'}</span>
     </button>
   );
 }

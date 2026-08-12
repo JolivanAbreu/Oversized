@@ -7,12 +7,13 @@ export function LoadingBlock({ label = 'Carregando' }) {
   );
 }
 
-export function EmptyState({ title, description, action }) {
+export function EmptyState({ title, description, action, icon }) {
   return (
-    <div className="border-2 border-dashed border-line px-6 py-16 text-center">
-      <p className="font-display text-2xl">{title}</p>
-      {description && <p className="mx-auto mt-2 max-w-sm text-sm text-ink-soft">{description}</p>}
-      {action && <div className="mt-6 flex justify-center">{action}</div>}
+    <div className="flex flex-col items-center gap-3.5 rounded-lg bg-white px-6 py-14 text-center shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+      {icon && <span className="text-4xl text-[#cccccc]">{icon}</span>}
+      <p className="text-base font-black uppercase text-[#111111]">{title}</p>
+      {description && <p className="mx-auto max-w-sm text-xs text-ink-soft">{description}</p>}
+      {action && <div className="mt-2 flex justify-center">{action}</div>}
     </div>
   );
 }

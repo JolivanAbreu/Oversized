@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Tag from './Tag';
 import Button from './Button';
 import { formatPrice } from '../lib/format';
+import { focalPointToCss } from '../lib/imageFocal';
 
 /**
  * Banner principal da home — puxa a foto de um produto real do catálogo
@@ -10,11 +12,17 @@ import { formatPrice } from '../lib/format';
  * home segue só com a seção de novidades.
  */
 export default function FeaturedBanner({ product }) {
+  const [hovering, setHovering] = useState(false);
   if (!product) return null;
-  const image = product.images?.[0];
+
+  const images = product.images || [];
+  // No hover, troca pra segunda foto (se existir) — dá uma prévia de outro
+  // ângulo da peça sem precisar clicar. Some se só houver uma foto.
+  const activeImage = hovering && images[1] ? images[1] : images[0];
+  const objectPosition = focalPointToCss(product.imageFocalPoint);
 
   return (
-    <section className="relative overflow-hidden border-b-2 border-ink bg-canvas">
+    <section className="relative overflow-hidden rounded-lg border-2 border-ink bg-canvas">
       <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-2 lg:gap-4">
         <div className="order-2 lg:order-1">
           <Tag variant="lime">peça em destaque</Tag>
@@ -30,11 +38,18 @@ export default function FeaturedBanner({ product }) {
           </div>
         </div>
 
-        <Link to={`/produtos/${product.slug}`} className="group order-1 block overflow-hidden border-2 border-ink bg-canvas-alt lg:order-2">
-          {image ? (
+        <Link
+          to={`/produtos/${product.slug}`}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+          className="group order-1 block overflow-hidden border-2 border-ink bg-canvas-alt lg:order-2"
+        >
+          {activeImage ? (
             <img
-              src={image.url}
+              key={activeImage.id}
+              src={activeImage.url}
               alt={product.name}
+              style={{ objectPosition }}
               className="h-[420px] w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-[520px]"
             />
           ) : (

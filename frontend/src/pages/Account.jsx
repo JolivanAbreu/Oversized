@@ -119,9 +119,9 @@ export default function Account() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-5 rounded-lg border border-line bg-canvas-alt p-5">
+      <div className="flex flex-wrap items-center justify-between gap-5 rounded-lg bg-white p-5 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
         <div className="flex items-center gap-5">
-          <div className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-ink text-2xl font-black text-white">
+          <div className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full border-[3px] border-tag bg-ink text-2xl font-black text-white">
             {initials(profile.name)}
           </div>
           <div>
@@ -138,8 +138,8 @@ export default function Account() {
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[2fr_1fr]">
-        <section className="rounded-lg border border-line p-5">
-          <h2 className="border-b-2 border-ink pb-3 text-xs font-black uppercase tracking-wide">Dados pessoais</h2>
+        <section className="rounded-lg bg-white p-5 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <h2 className="border-b-2 border-ink pb-3 text-xs font-black uppercase tracking-wide text-[#111111]">Dados pessoais</h2>
           <form onSubmit={handleSaveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Field label="Nome completo">
@@ -168,8 +168,8 @@ export default function Account() {
         </section>
 
         <div className="flex flex-col gap-5">
-          <section className="rounded-lg border border-line p-4">
-            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Endereço principal</h2>
+          <section className="rounded-lg bg-white p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide text-[#111111]">Endereço principal</h2>
             {address ? (
               <p className="mt-3 text-xs leading-relaxed text-ink-soft">
                 <strong className="text-ink">{address.street}, {address.number}</strong>
@@ -185,8 +185,8 @@ export default function Account() {
             </Button>
           </section>
 
-          <section className="rounded-lg border border-line p-4">
-            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Trocar e-mail</h2>
+          <section className="rounded-lg bg-white p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide text-[#111111]">Trocar e-mail</h2>
             <form onSubmit={handleChangeEmail} className="mt-3 space-y-3">
               <Field label="Novo e-mail">
                 <input type="email" required className={inputClass} value={emailForm.newEmail} onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })} />
@@ -202,8 +202,8 @@ export default function Account() {
             </form>
           </section>
 
-          <section className="rounded-lg border border-line p-4">
-            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide">Segurança</h2>
+          <section className="rounded-lg bg-white p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <h2 className="border-b-2 border-ink pb-2 text-xs font-black uppercase tracking-wide text-[#111111]">Segurança</h2>
             <form onSubmit={handleChangePassword} className="mt-3 space-y-3">
               <Field label="Senha atual">
                 <input type="password" required placeholder="••••••••" className={inputClass} value={passwordForm.currentPassword} onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} />

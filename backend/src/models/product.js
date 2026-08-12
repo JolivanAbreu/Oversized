@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     basePrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: 'base_price' },
     featuredSlot: { type: DataTypes.STRING(20), field: 'featured_slot' },
     badgeLabel: { type: DataTypes.STRING(30), field: 'badge_label' },
+    imageFocalPoint: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'center', field: 'image_focal_point' },
     active: { type: DataTypes.BOOLEAN, defaultValue: true },
   }, {
     tableName: 'products',
